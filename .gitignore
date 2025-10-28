@@ -1,0 +1,27 @@
+# processing default files
+sketch.properties
+templates/
+tools/
+libraries/
+examples/
+modes/
+
+# editor config
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# temp files
+temp/
+*.tmp
+
+# os files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# build artifacts
+build/
+out/
+*.class
