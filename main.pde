@@ -1,177 +1,142 @@
-// library untuk suara/musik
+
+// import library sound
 import processing.sound.*;
 
-// === variabel global ===
-VendingMachine vendingMachine; // objek vending machine utama
-CityBackground cityBackground; // objek background kota
+// objek utama
+VendingMachine vendingMachine; // mesin utama
+CityBackground cityBackground; // background kota
 
-// === variabel musik ===
-SoundFile[] musicTracks = new SoundFile[4]; // array untuk menyimpan 4 track musik
-int currentTrack = 0; // tracj yang sedang diputar (0-3)
-boolean musicPlaying = false; // status musik sedang play atau pause
-// path file musik yang akan diload
+// musik dan sound effect
+SoundFile[] musicTracks = new SoundFile[4]; // 4 lagu
+int currentTrack = 0; // lagu aktif
+boolean musicPlaying = false; // status musik
 String[] musicPaths = {
   "assets/sounds/music.mp3",
-  "assets/sounds/music.mp3", 
-  "assets/sounds/music.mp3", 
-  "assets/sounds/music.mp3"  
+  "assets/sounds/music.mp3",
+  "assets/sounds/music.mp3",
+  "assets/sounds/music.mp3"
 };
+SoundFile numpadBeep, machineWorks, collectItem, coinDrop, coinRefund; // efek suara
+int userCoins = 20; // saldo koin user
+ArrayList<AnimatedCoin> animatedCoins; // animasi koin
 
-// === fungsi setup - dipanggil sekali saat program dimulai ===
+// pengaturan awal window
+void settings() {
+  size(800, 525, P3D); // ukuran window
+  smooth(8); // antialiasing
+}
+
 void setup() {
-  // buat window dengan ukuran 800x525, mode P3D untuk render 3d
-  // kalau mau ubah ukuran window, ganti angka di sini
-  size(800, 525, P3D);
-  
-  // setup font dan rendering untuk kualitas visual lebih halus
-  textAlign(CENTER, CENTER);
-  smooth(8); // antialiasing level 8 untuk gambar lebih halus
-  
-  // buat objek background kota dan vending machine
-  cityBackground = new CityBackground(); 
-  vendingMachine = new VendingMachine();
-
-  // === load semua file musik ===
+  textAlign(CENTER, CENTER); // rata tengah
+  cityBackground = new CityBackground(); // buat background
+  vendingMachine = new VendingMachine(); // buat mesin
+  animatedCoins = new ArrayList<AnimatedCoin>(); // list animasi koin
   for (int i = 0; i < musicTracks.length; i++) {
     try {
-      // load file musik dari path yang sudah ditentukan
-      musicTracks[i] = new SoundFile(this, musicPaths[i]); 
-      musicTracks[i].amp(0.4); // set volume musik ke 40%
+      musicTracks[i] = new SoundFile(this, musicPaths[i]);
+      musicTracks[i].amp(0.4); // volume 40%
     } catch (Exception e) {
-      // tampilkan error di console kalau gagal load musik
-      println("Error loading music file: " + musicPaths[i]);
+      println("gagal load musik: " + musicPaths[i]);
       println(e.getMessage());
     }
   }
-}
-
-// === fungsi draw - loop utama yang terus berjalan ===
-void draw() {
-  // === layer 1: gambar background kota (paling belakang) ===
-  cityBackground.update(); // update animasi awan dan bintang
-  cityBackground.display(); // render langit, matahari/bulan, gedung, lampu jalan
-  
-  // === layer 2: gambar vending machine (foreground) ===
-  int currentSkyMode = cityBackground.getSkyMode(); // ambil mode waktu (pagi/siang/sore/malam)
-  vendingMachine.update(); // update animasi snack jatuh
-  vendingMachine.display(currentSkyMode); // render vending machine dengan lighting sesuai waktu
-
-  // === layer 3: gambar ui button dan teks instruksi (paling depan) ===
-  hint(DISABLE_DEPTH_TEST); // disable depth test supaya ui selalu di depan
-  drawMusicButton(); // gambar tombol play/pause musik
-  drawInstructions(); // gambar instruksi kontrol
-}
-
-
-// === event handler - dipanggil otomatis saat mouse diklik ===
-void mouseClicked() {
-  // cek apakah klik di tombol musik
-  float btnX = 60; // posisi x tombol musik
-  float btnY = height - 40; // posisi y tombol musik
-  float btnW = 100; // lebar tombol
-  float btnH = 35; // tinggi tombol
-  // deteksi apakah mouse ada di area tombol
-  boolean isMusicHover = (mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 &&
-                       mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2);
-                       
-  if (isMusicHover) {
-    // toggle play/pause musik
-    if (musicPlaying) {
-      if (musicTracks[currentTrack] != null) musicTracks[currentTrack].pause();
-      musicPlaying = false;
-    } else {
-      if (musicTracks[currentTrack] != null) musicTracks[currentTrack].play();
-      musicPlaying = true;
-    }
+  try {
+    numpadBeep = new SoundFile(this, "assets/sounds/numpadBeep.mp3");
+    machineWorks = new SoundFile(this, "assets/sounds/machineWorks.mp3");
+    collectItem = new SoundFile(this, "assets/sounds/collectItem.mp3");
+    coinDrop = new SoundFile(this, "assets/sounds/coinDrop.mp3");
+    coinRefund = new SoundFile(this, "assets/sounds/coinRefund.mp3");
+    numpadBeep.amp(0.6); machineWorks.amp(0.8); collectItem.amp(0.7); coinDrop.amp(0.9); coinRefund.amp(0.8); // atur volume
+  } catch (Exception e) {
+    println("debug: " + e.getMessage());
   }
-
-  // teruskan klik ke vending machine untuk handle numpad dan pintu pickup
-  vendingMachine.handleNumpadClick();
-  vendingMachine.handlePickupDoorClick();
-  cityBackground.handleMouseClicked(mouseX, mouseY);
+  surface.setLocation((displayWidth - width)/2, (displayHeight - height)/2); // tengah layar
 }
 
-// === event handler - dipanggil otomatis saat keyboard ditekan ===
-void keyPressed() {
-  // tekan 'n' untuk ganti ke track musik berikutnya
-  if (key == 'n' || key == 'N') {
-    if (musicTracks[currentTrack] != null) musicTracks[currentTrack].stop(); // stop track sekarang
-    currentTrack = (currentTrack + 1) % musicTracks.length; // pindah ke track berikutnya (loop balik ke 0)
-    
-    // play track baru
-    if (musicTracks[currentTrack] != null) {
-      musicTracks[currentTrack].play();
-      musicPlaying = true;
-    } else {
-      musicPlaying = false;
+void draw() {
+  cityBackground.update(); // update animasi bg
+  cityBackground.display(); // gambar bg
+  int currentSkyMode = cityBackground.getSkyMode();
+  vendingMachine.update(); // update mesin
+  vendingMachine.display(currentSkyMode); // gambar mesin
+  for (int i = animatedCoins.size() - 1; i >= 0; i--) {
+    AnimatedCoin ac = animatedCoins.get(i); ac.update(); ac.display(); if (ac.isDead()) animatedCoins.remove(i); // update koin
+  }
+  drawMusicButton(); // tombol musik
+  drawInstructions(); // instruksi
+  drawCoinUI(); // ui koin
+}
+
+void mouseClicked() {
+  float btnX = 60, btnY = height - 40, btnW = 100, btnH = 35;
+  boolean isMusicHover = (mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 && mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2);
+  if (isMusicHover) {
+    if (musicPlaying) { if (musicTracks[currentTrack] != null) musicTracks[currentTrack].pause(); musicPlaying = false; }
+    else { if (musicTracks[currentTrack] != null) musicTracks[currentTrack].play(); musicPlaying = true; }
+    return;
+  }
+  if (vendingMachine.isMouseOverCoinSlot(mouseX, mouseY)) {
+    if (userCoins > 0) {
+      userCoins--; vendingMachine.addCoin();
+      float[] targetPos = vendingMachine.getCoinSlotPos();
+      animatedCoins.add(new AnimatedCoin(targetPos[0]+40, targetPos[1] - 50, targetPos[0]+40, targetPos[1]-30)); // animasi koin
+      if (coinDrop != null) coinDrop.play();
     }
+    return;
+  }
+  if (vendingMachine.isMouseOverRefundButton(mouseX, mouseY)) {
+    int refundedAmount = vendingMachine.manualRefund(); userCoins += refundedAmount;
+    if (refundedAmount > 0 && coinRefund != null) coinRefund.play();
+    return;
+  }
+  int refundFromNumpad = vendingMachine.handleNumpadClick(machineWorks, coinRefund);
+  if (refundFromNumpad > 0) userCoins += refundFromNumpad; // refund
+  else if (refundFromNumpad == -1) { if (numpadBeep != null) numpadBeep.play(); }
+  vendingMachine.handlePickupDoorClick(collectItem); // ambil barang
+}
+
+void keyPressed() {
+  if (key == 'n' || key == 'N') {
+    if (musicTracks[currentTrack] != null) musicTracks[currentTrack].stop();
+    currentTrack = (currentTrack + 1) % musicTracks.length;
+    if (musicTracks[currentTrack] != null) { musicTracks[currentTrack].play(); musicPlaying = true; }
+    else musicPlaying = false;
     println("Playing Track: " + (currentTrack + 1));
   }
-
-  // teruskan input keyboard ke vending machine (untuk ketik kode) dan citybackground (untuk ganti waktu)
-  vendingMachine.handleKeyPressed(key);
-  cityBackground.handleKeyPressed(key); // handle tombol 't' untuk ganti waktu
+  if (key == 'r' || key == 'R') {
+    int refundedAmount = vendingMachine.manualRefund(); userCoins += refundedAmount;
+    if (refundedAmount > 0 && coinRefund != null) coinRefund.play();
+  }
+  int refundFromKey = vendingMachine.handleKeyPressed(key, machineWorks, coinRefund);
+  if (refundFromKey > 0) userCoins += refundFromKey;
+  else if (refundFromKey == -1) { if (numpadBeep != null) numpadBeep.play(); }
+  if (key == 't' || key == 'T') { cityBackground.nextSkyMode(); println("Sky Mode: " + cityBackground.getSkyMode()); }
 }
 
-// === fungsi untuk gambar tombol musik ===
 void drawMusicButton() {
-  // posisi dan ukuran tombol
-  float btnX = 60; // kalau mau geser tombol ke kanan/kiri ubah nilai ini
-  float btnY = height - 40; // kalau mau geser tombol ke atas/bawah ubah nilai ini
-  float btnW = 100; // lebar tombol, ubah untuk resize
-  float btnH = 35; // tinggi tombol, ubah untuk resize
-  // deteksi apakah mouse hover di tombol
-  boolean isHover = (mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 && 
-                     mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2);
-  
-  // ganti warna tombol kalau dihover
-  if (isHover) {
-    fill(255, 200, 0); // warna oranye terang saat hover
-    cursor(HAND); // ganti cursor jadi tangan
-  } else {
-    fill(255, 150, 0); // warna oranye normal
-    cursor(ARROW); // cursor biasa
-  }
-  
-  // gambar kotak tombol dengan rounded corner
-  stroke(200, 100, 0);
-  strokeWeight(3);
-  rectMode(CENTER);
-  rect(btnX, btnY, btnW, btnH, 8); // angka 8 adalah radius sudut rounded
-  rectMode(CORNER);
-  
-  // gambar teks di tombol
-  fill(255);
-  textAlign(CENTER, CENTER);
-  textSize(14);
-  
-  // tampilkan "play" atau "pause" sesuai status musik
-  if (musicPlaying) {
-    text("PAUSE", btnX, btnY);
-  } else {
-    text("PLAY", btnX, btnY);
-  }
-  
-  // tampilkan nomor track saat ini
-  textSize(10);
-  text("Track " + (currentTrack + 1) + "/" + musicTracks.length, btnX, btnY + 25);
-  
-  textAlign(LEFT);
-  noStroke();
+  float btnX = 60, btnY = height - 40, btnW = 100, btnH = 35;
+  boolean isHover = (mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 && mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2);
+  if (isHover) { fill(255, 200, 0); cursor(HAND); }
+  else fill(255, 150, 0);
+  stroke(200, 100, 0); strokeWeight(3); rectMode(CENTER); rect(btnX, btnY, btnW, btnH, 8); rectMode(CORNER);
+  fill(255); textAlign(CENTER, CENTER); textSize(14); text(musicPlaying ? "PAUSE" : "PLAY", btnX, btnY);
+  textSize(10); text("Track " + (currentTrack + 1) + "/" + musicTracks.length, btnX, btnY + 25);
+  textAlign(LEFT); noStroke();
 }
 
-// === fungsi untuk gambar teks instruksi kontrol ===
 void drawInstructions() {
-  fill(255, 255, 255, 200); // warna putih semi transparan
-  textSize(12); // ukuran font instruksi, ubah untuk resize teks
-  textAlign(LEFT);
-  int y_pos = 20; // posisi y awal, ubah untuk geser instruksi ke atas/bawah
-  // tampilkan semua instruksi kontrol
-  text("Kontrol:", 10, y_pos);
-  y_pos += 15;
-  text("'T' : Ganti Waktu (Pagi/Siang/Sore/Malam)", 10, y_pos);
-  y_pos += 15;
-  text("'N' : Ganti Lagu (Next Track)", 10, y_pos);
-  y_pos += 15;
+  fill(255, 255, 255, 200); textSize(12); textAlign(LEFT); int y_pos = 20;
+  text("Kontrol:", 10, y_pos); y_pos += 15;
+  text("'T' : Ganti Waktu (Pagi/Siang/Sore/Malam)", 10, y_pos); y_pos += 15;
+  text("'N' : Ganti Lagu (Next Track)", 10, y_pos); y_pos += 15;
   text("Klik 'PLAY' : Toggle Play/Pause", 10, y_pos);
+}
+
+void drawCoinUI() {
+  pushMatrix(); hint(DISABLE_DEPTH_TEST); noStroke();
+  float uiX = width - 90, uiY = 30, iconSize = 30;
+  fill(192, 192, 192); stroke(150, 150, 150); strokeWeight(2); ellipse(uiX, uiY, iconSize, iconSize); // koin
+  fill(160, 160, 160); noStroke(); ellipse(uiX, uiY, iconSize * 0.7, iconSize * 0.7); fill(192, 192, 192); textAlign(CENTER, CENTER); textSize(iconSize * 0.5); text("C", uiX, uiY);
+  fill(255, 255, 255, 220); textAlign(LEFT, CENTER); textSize(18); text(userCoins, uiX + iconSize/2 + 10, uiY);
+  noStroke(); textAlign(LEFT); popMatrix();
 }
