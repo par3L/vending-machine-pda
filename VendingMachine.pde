@@ -130,9 +130,7 @@ class VendingMachine {
     }
   }
   
-  // === Stiker tidak berubah ===
   void renderStickers(float vmX, float vmY, float vmWidth, float vmHeight) {
-    // --- STIKER SALE (TETAP ADA) ---
     pushMatrix();
     translate(vmX - vmWidth/2 + 24, vmY + vmHeight/2 - 160);
     fill(255, 80, 80);
@@ -152,7 +150,6 @@ class VendingMachine {
     text("SALE!", 0, 0);
     popMatrix();
 
-    // --- STIKER QUALITY (TETAP ADA) ---
     fill(200, 150, 50);
     stroke(150, 100, 20);
     strokeWeight(2);
@@ -161,7 +158,6 @@ class VendingMachine {
     textSize(8);
     text("QUALITY", vmX - vmWidth/2 + 22.5, vmY - 90);
 
-    // --- STIKER SMILEY (TETAP ADA) ---
     fill(255, 220, 50);
     stroke(200, 180, 30);
     strokeWeight(2);
@@ -175,7 +171,6 @@ class VendingMachine {
     strokeWeight(2);
     arc(vmX - vmWidth/2 + 30, vmY + 138, 12, 12, 0, PI);
 
-    // --- STIKER NEW (TETAP ADA) ---
     fill(255, 100, 255);
     stroke(200, 50, 200);
     strokeWeight(2);
@@ -189,7 +184,6 @@ class VendingMachine {
     rotate(0.3);
   }
   
-  // ... (renderItemSupports tidak berubah) ...
   void renderItemSupports(float startX, float startY, float spacingX, float spacingY) {
     float itemW = 62;
     float itemH = 65;
@@ -236,7 +230,6 @@ class VendingMachine {
     }
   }
 
-  // === MODIFIKASI: gambar slot koin dengan efek hover ===
   void renderCoinSlot(float x, float y) {
     // x dan y adalah *base* numpadX dan numpadY
     // posisi y slot: numpadY - 93
@@ -244,7 +237,7 @@ class VendingMachine {
     float slotX = x - 12;
     float slotY = y;
     
-    // === BARU: Logika Hover ===
+    // Logika Hover 
     boolean isHovering = isMouseOverCoinSlot(mouseX, mouseY);
     if (isHovering) {
       cursor(HAND); // Ganti kursor
@@ -266,7 +259,6 @@ class VendingMachine {
     rect(slotX + 10, slotY + 2, 20, 6, 1); // lubang
   }
   
-  // === BARU: Getter untuk posisi slot koin ===
   // ini dipakai oleh main.pde untuk tahu ke mana koin harus terbang
   float[] getCoinSlotPos() {
     float numpadX = 380 + 120; // x tengah vm + 120
@@ -280,7 +272,6 @@ class VendingMachine {
     return new float[] { slotX + slotW / 2, slotY + slotH / 2 };
   }
 
-  // === BARU: gambar tombol refund ===
   void renderRefundButton(float x, float y) {
     // x dan y adalah *base* numpadX dan numpadY
     // posisi y: numpadY + 147
@@ -324,7 +315,7 @@ class VendingMachine {
 
       if (isMouseOverButton2D(btnX, btnY, 16, 30)) {
         fill(100, 150, 220); // warna hover tombol
-        cursor(HAND); // === BARU: Ganti kursor ===
+        cursor(HAND); // 
       } else {
         fill(70, 70, 85); // warna standar tombol
       }
@@ -340,7 +331,6 @@ class VendingMachine {
     }
   }
 
-  // === MODIFIKASI: display lcd diupdate untuk sistem koin ===
   void renderInputDisplay2D(float x, float y) {
     // background lcd
     fill(30, 60, 40); // warna hijau gelap background
@@ -379,7 +369,6 @@ class VendingMachine {
     return mouseX > x && mouseX < x + w && mouseY > y && mouseY < y + h;
   }
 
-  // === BARU: fungsi cek hover slot koin ===
   boolean isMouseOverCoinSlot(float mx, float my) {
     float numpadX = 420 + 120;
     float numpadY = height - 240 - 50;
@@ -391,7 +380,6 @@ class VendingMachine {
     return (mx > slotX && mx < slotX + slotW && my > slotY && my < slotY + slotH);
   }
   
-  // === BARU: fungsi cek hover tombol refund ===
   boolean isMouseOverRefundButton(float mx, float my) {
     float numpadX = 420 + 120;
     float numpadY = height - 240 - 50;
@@ -402,14 +390,12 @@ class VendingMachine {
     return (mx > btnX && mx < btnX + btnSize && my > btnY && my < btnY + btnSize);
   }
 
-  // === BARU: fungsi untuk menambah koin ke mesin ===
   void addCoin() {
     coinsInserted++;
     errorMessage = ""; // hapus error message saat user masukkan koin
     errorTimer = 0;
   }
   
-  // === BARU: fungsi untuk refund manual ===
   int manualRefund() {
     int amountToRefund = coinsInserted;
     coinsInserted = 0; // kosongkan koin di mesin
@@ -418,7 +404,6 @@ class VendingMachine {
     return amountToRefund; // kembalikan jumlah koin
   }
 
-  // === MODIFIKASI: handleNumpadClick diubah untuk sistem koin ===
   // sekarang return int (jumlah refund, -1 untuk beep, 0 untuk diam)
   int handleNumpadClick(SoundFile machineWorksSound, SoundFile coinRefundSound) {
     if (isProcessing) return 0; // jangan proses jika mesin sedang bekerja
@@ -453,7 +438,6 @@ class VendingMachine {
     return 0; // tidak ada tombol numpad yang diklik
   }
 
-  // === MODIFIKASI: Fungsi diubah untuk menerima SoundFile ===
   void handlePickupDoorClick(SoundFile collectSound) {
     float vmX = 380;
     float vmY = height - 240;
@@ -468,14 +452,12 @@ class VendingMachine {
       collectedItem != null) {
       collectedItem = null;
       doorOpen = false;
-      // === TAMBAHAN: Mainkan sound collect ===
       if (collectSound != null) {
         collectSound.play();
       }
     }
   }
 
-  // === MODIFIKASI: handleKeyPressed diubah untuk sistem koin ===
   // sekarang return int (jumlah refund, -1 untuk beep, 0 untuk diam)
   int handleKeyPressed(char key, SoundFile machineWorksSound, SoundFile coinRefundSound) {
     if (key >= '0' && key <= '9') {
@@ -493,7 +475,6 @@ class VendingMachine {
     return 0; // tidak ada input valid
   }
 
-  // === MODIFIKASI TOTAL: processPurchase dirombak untuk sistem koin ===
   // proses pembelian saat user tekan "ok" atau enter
   // sekarang return int (jumlah refund)
   int processPurchase(SoundFile machineWorksSound, SoundFile coinRefundSound) {
