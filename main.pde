@@ -2,6 +2,10 @@
 // import library sound
 import processing.sound.*;
 
+// state management
+int gameState = 0; // 0 = intro, 1 = main game
+IntroAnimation introAnim; // animasi intro
+
 // objek utama
 VendingMachine vendingMachine; // mesin utama
 CityBackground cityBackground; // background kota
@@ -17,17 +21,18 @@ String[] musicPaths = {
   "assets/sounds/music.mp3"
 };
 SoundFile numpadBeep, machineWorks, collectItem, coinDrop, coinRefund; // efek suara
-int userCoins = 20; // saldo koin user
+int userCoins = 200; // saldo koin user
 ArrayList<AnimatedCoin> animatedCoins; // animasi koin
 
 // pengaturan awal window
 void settings() {
-  size(800, 525, P3D); // ukuran window
+  size(1000, 525, P3D); // ukuran window
   smooth(8); // antialiasing
 }
 
 void setup() {
   textAlign(CENTER, CENTER); // rata tengah
+  introAnim = new IntroAnimation(); // buat intro
   cityBackground = new CityBackground(); // buat background
   vendingMachine = new VendingMachine(); // buat mesin
   animatedCoins = new ArrayList<AnimatedCoin>(); // list animasi koin
@@ -54,20 +59,33 @@ void setup() {
 }
 
 void draw() {
-  cityBackground.update(); // update animasi bg
-  cityBackground.display(); // gambar bg
-  int currentSkyMode = cityBackground.getSkyMode();
-  vendingMachine.update(); // update mesin
-  vendingMachine.display(currentSkyMode); // gambar mesin
-  for (int i = animatedCoins.size() - 1; i >= 0; i--) {
-    AnimatedCoin ac = animatedCoins.get(i); ac.update(); ac.display(); if (ac.isDead()) animatedCoins.remove(i); // update koin
+  if (gameState == 0) {
+    // INTRO STATE
+    introAnim.update();
+    introAnim.display();
+  } else {
+    // MAIN GAME STATE
+    cityBackground.update(); // update animasi bg
+    cityBackground.display(); // gambar bg
+    int currentSkyMode = cityBackground.getSkyMode();
+    vendingMachine.update(); // update mesin
+    vendingMachine.display(currentSkyMode); // gambar mesin
+    for (int i = animatedCoins.size() - 1; i >= 0; i--) {
+      AnimatedCoin ac = animatedCoins.get(i); ac.update(); ac.display(); if (ac.isDead()) animatedCoins.remove(i); // update koin
+    }
+    drawMusicButton(); // tombol musik
+    drawInstructions(); // instruksi
+    drawCoinUI(); // ui koin
   }
-  drawMusicButton(); // tombol musik
-  drawInstructions(); // instruksi
-  drawCoinUI(); // ui koin
 }
 
 void mouseClicked() {
+  if (gameState == 0) {
+    // no mouse interaction in intro
+    return;
+  }
+  
+  // MAIN GAME MOUSE INTERACTIONS
   float btnX = 60, btnY = height - 40, btnW = 100, btnH = 35;
   boolean isMusicHover = (mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 && mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2);
   if (isMusicHover) {
@@ -96,21 +114,31 @@ void mouseClicked() {
 }
 
 void keyPressed() {
-  if (key == 'n' || key == 'N') {
-    if (musicTracks[currentTrack] != null) musicTracks[currentTrack].stop();
-    currentTrack = (currentTrack + 1) % musicTracks.length;
-    if (musicTracks[currentTrack] != null) { musicTracks[currentTrack].play(); musicPlaying = true; }
-    else musicPlaying = false;
-    println("Playing Track: " + (currentTrack + 1));
+  if (gameState == 0) {
+    // INTRO CONTROLS
+    if (key == ' ') {
+      gameState = 1; // masuk ke game
+    } else if (key == 'r' || key == 'R') {
+      introAnim.reset(); // reset intro
+    }
+  } else {
+    // MAIN GAME CONTROLS
+    if (key == 'n' || key == 'N') {
+      if (musicTracks[currentTrack] != null) musicTracks[currentTrack].stop();
+      currentTrack = (currentTrack + 1) % musicTracks.length;
+      if (musicTracks[currentTrack] != null) { musicTracks[currentTrack].play(); musicPlaying = true; }
+      else musicPlaying = false;
+      println("Playing Track: " + (currentTrack + 1));
+    }
+    if (key == 'r' || key == 'R') {
+      int refundedAmount = vendingMachine.manualRefund(); userCoins += refundedAmount;
+      if (refundedAmount > 0 && coinRefund != null) coinRefund.play();
+    }
+    int refundFromKey = vendingMachine.handleKeyPressed(key, machineWorks, coinRefund);
+    if (refundFromKey > 0) userCoins += refundFromKey;
+    else if (refundFromKey == -1) { if (numpadBeep != null) numpadBeep.play(); }
+    if (key == 't' || key == 'T') { cityBackground.nextSkyMode(); println("Sky Mode: " + cityBackground.getSkyMode()); }
   }
-  if (key == 'r' || key == 'R') {
-    int refundedAmount = vendingMachine.manualRefund(); userCoins += refundedAmount;
-    if (refundedAmount > 0 && coinRefund != null) coinRefund.play();
-  }
-  int refundFromKey = vendingMachine.handleKeyPressed(key, machineWorks, coinRefund);
-  if (refundFromKey > 0) userCoins += refundFromKey;
-  else if (refundFromKey == -1) { if (numpadBeep != null) numpadBeep.play(); }
-  if (key == 't' || key == 'T') { cityBackground.nextSkyMode(); println("Sky Mode: " + cityBackground.getSkyMode()); }
 }
 
 void drawMusicButton() {

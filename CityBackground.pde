@@ -29,7 +29,7 @@ class CityBackground {
       starBrightness[i] = random(100, 255); // kecerahan acak
     }
     // gambar layer jendela mati
-   windowOffLayer = createGraphics(width, height, P2D);
+    windowOffLayer = createGraphics(width, height, P2D);
     windowOffLayer.beginDraw();
     windowOffLayer.noStroke();
     windowOffLayer.fill(40, 40, 60);
@@ -50,7 +50,7 @@ class CityBackground {
     drawWindowGrid(windowOnLayer, 70, 310, 100, height-230, true);
     drawWindowGrid(windowOnLayer, 810, 320, 100, height-230, true); // gedung 5
     windowOnLayer.endDraw();
-  } 
+  }
 
   void update() {
     updateClouds(); // update posisi awan

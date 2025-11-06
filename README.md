@@ -1,7 +1,29 @@
 
-# Simulator Mesin Penjual Otomatis (Vending Machine)
+# Simulator Mesin Penjual Otomatis (Vending Machine) 🎮
 
-> Simulasi mesin penjual otomatis interaktif dengan visual 3D, animasi realistis, dan sistem waktu dinamis. Dibuat dengan Processing, fokus pada pengalaman visual, suara, dan interaksi yang mudah dipahami.
+> Simulasi mesin penjual otomatis interaktif dengan **animasi intro 3D**, visual realistis, dan sistem waktu dinamis. Dibuat dengan Processing, fokus pada pengalaman visual, suara, dan interaksi yang mudah dipahami.
+
+## 🎬 Animasi Intro
+Proyek ini dimulai dengan **animasi intro 3D yang memukau** yang menggambarkan alur kerja vending machine:
+- **6 Fase Animasi**:
+  1. ✨ Logo fade in dengan partikel 3D background
+  2. 🔄 Rotasi mesin vending 360° 
+  3. 🪙 Koin terbang dengan kurva Bezier smooth
+  4. 🍿 Snack jatuh dengan animasi rotasi
+  5. 📦 Mesin ke posisi final
+  6. 📋 Tampilan instruksi interaktif
+
+### Kontrol Intro:
+- **SPASI** - Skip intro dan masuk ke program utama
+- **R** - Ulangi animasi intro dari awal
+
+### Teknologi Intro:
+- Menggunakan **P3D renderer** untuk rendering 3D
+- **Bezier curves** untuk pergerakan smooth objek
+- **Easing functions** (easeInOutCubic) untuk animasi natural
+- **Dynamic camera** dengan rotasi dan zoom
+- **Particle system** 3D untuk atmosphere
+- **3D lighting** dengan ambient, directional, dan point lights
 
 ## Fitur Utama
 
@@ -33,11 +55,12 @@
 
 ```
 vending-machine-pda/
-├── main.pde              // entry point & logika utama
+├── main.pde              // entry point & state management (intro/game)
+├── IntroAnimation.pde    // ⭐ animasi intro 3D dengan kurva bezier
 ├── VendingMachine.pde    // logika mesin, transaksi, render
 ├── Item.pde              // class produk & animasi jatuh
 ├── CityBackground.pde    // background & sistem waktu
-├── AnimatedCoin.pde      // animasi koin terbang
+├── AnimatedCoin.pde      // animasi koin terbang (2D untuk game)
 ├── assets/
 │   ├── images/           // gambar produk
 │   └── sounds/           // efek suara & musik

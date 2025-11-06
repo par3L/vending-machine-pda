@@ -17,7 +17,15 @@ class VendingMachine {
   int coinsInserted = 0; // koin masuk
 
   VendingMachine() {
-    items = new ArrayList<Item>(); inputCode = ""; isProcessing = false; itemsToSlide = new ArrayList<Item>(); errorMessage = ""; errorTimer = 0; collectedItem = null; doorOpen = false; initializeItems();
+    items = new ArrayList<Item>();
+    inputCode = "";
+    isProcessing = false;
+    itemsToSlide = new ArrayList<Item>();
+    errorMessage = "";
+    errorTimer = 0;
+    collectedItem = null;
+    doorOpen = false;
+    initializeItems();
   }
 
 
@@ -35,29 +43,119 @@ class VendingMachine {
   }
 
 
-  void display(int skyMode) { renderVendingMachine2D(skyMode); }
+  void display(int skyMode) {
+    renderVendingMachine2D(skyMode);
+  }
 
 
   void renderVendingMachine2D(int skyMode) {
-    pushMatrix(); camera();
+    pushMatrix();
+    camera();
     float vmX = 420, vmY = height - 240, vmWidth = 360, vmHeight = 480;
     float vmSideW = 35, vmLeft = vmX - vmWidth/2, vmTop = vmY - vmHeight/2;
     color baseBodyColor = color(160, 45, 45), basePanelColor = color(180, 55, 55);
     color sideBodyColor = color(red(baseBodyColor) * 0.7, green(baseBodyColor) * 0.7, blue(baseBodyColor) * 0.7);
     color sidePanelColor = color(red(basePanelColor) * 0.7, green(basePanelColor) * 0.7, blue(basePanelColor) * 0.7);
-    noStroke(); fill(sideBodyColor); pushMatrix(); translate(vmLeft, vmTop); quad(0, 0, -vmSideW, +vmSideW, -vmSideW, vmHeight + vmSideW, 0, vmHeight); popMatrix(); fill(sidePanelColor); pushMatrix(); translate(vmLeft, vmTop); quad(0, 0, -vmSideW, +vmSideW, -vmSideW, 40 + vmSideW, 0, 40); popMatrix(); fill(baseBodyColor); noStroke(); rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, vmHeight); fill(basePanelColor); noStroke(); rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, 40); fill(240, 220, 200); rect(vmX - vmWidth/2 + 10, vmY - vmHeight/2 + 8, vmWidth - 20, 25, 4); fill(100, 30, 30); textAlign(CENTER, CENTER); textSize(14); text("SNACKS 4 FIVE COINS", vmX, vmY - vmHeight/2 + 20);
+    noStroke();
+    fill(sideBodyColor);
+    pushMatrix();
+    translate(vmLeft, vmTop);
+    quad(0, 0, -vmSideW, +vmSideW, -vmSideW, vmHeight + vmSideW, 0, vmHeight);
+    popMatrix();
+    fill(sidePanelColor);
+    pushMatrix();
+    translate(vmLeft, vmTop);
+    quad(0, 0, -vmSideW, +vmSideW, -vmSideW, 40 + vmSideW, 0, 40);
+    popMatrix();
+    fill(baseBodyColor);
+    noStroke();
+    rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, vmHeight);
+    fill(basePanelColor);
+    noStroke();
+    rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, 40);
+    fill(240, 220, 200);
+    rect(vmX - vmWidth/2 + 10, vmY - vmHeight/2 + 8, vmWidth - 20, 25, 4);
+    fill(100, 30, 30);
+    textAlign(CENTER, CENTER);
+    textSize(14);
+    text("SNACKS 4 FIVE COINS", vmX, vmY - vmHeight/2 + 20);
     renderStickers(vmX, vmY, vmWidth, vmHeight); // stiker
     float glassX = vmX - 130, glassY = vmY - vmHeight/2 + 60, glassW = 220, glassH = 320;
-    fill(45, 45, 50); stroke(25); strokeWeight(4); rect(glassX, glassY, glassW, glassH, 4); fill(150, 180, 200, 40); noStroke(); rect(glassX + 5, glassY + 5, glassW - 10, glassH - 10); fill(255, 255, 255, 50); pushMatrix(); translate(glassX + 20, glassY + 30); rotate(-0.2); rect(0, 0, 40, 150); popMatrix();
+    fill(45, 45, 50);
+    stroke(25);
+    strokeWeight(4);
+    rect(glassX, glassY, glassW, glassH, 4);
+    fill(150, 180, 200, 40);
+    noStroke();
+    rect(glassX + 5, glassY + 5, glassW - 10, glassH - 10);
+    fill(255, 255, 255, 50);
+    pushMatrix();
+    translate(glassX + 20, glassY + 30);
+    rotate(-0.2);
+    rect(0, 0, 40, 150);
+    popMatrix();
     renderItems2D(glassX + 15, glassY + 18); // snack
     float doorX = glassX, doorY = vmY + vmHeight/2 - 90, doorW = glassW, doorH = 70;
     boolean isHovering = mouseX > doorX && mouseX < doorX + doorW && mouseY > doorY && mouseY < doorY + doorH;
-    doorOpen = isHovering; if (isHovering && collectedItem != null) cursor(HAND);
-    fill(35, 35, 40); stroke(25); strokeWeight(3); rect(doorX, doorY, doorW, doorH, 4); float openingY = doorY + 12, openingH = doorH - 28;
-    if (doorOpen) { fill(45, 45, 50); noStroke(); rect(doorX + 20, openingY, doorW - 40, openingH, 3); if (collectedItem != null) { pushMatrix(); translate(doorX + doorW/2, openingY + openingH/2); fill(0, 0, 0, 60); noStroke(); ellipse(0, 10, 50, 10); rotate(HALF_PI); if (collectedItem.itemImage != null) { imageMode(CENTER); tint(255, 255); image(collectedItem.itemImage, 0, 0, 50, 45); noTint(); } else { fill(collectedItem.snackColor); stroke(0); strokeWeight(1.5); rect(-25, -22.5, 50, 45, 3); } popMatrix(); imageMode(CORNER); } noFill(); if (collectedItem != null) stroke(255, 215, 0, 150); else stroke(120, 120, 130, 100); strokeWeight(3); rect(doorX + 18, openingY - 2, doorW - 36, openingH + 4, 3); } else { fill(25, 25, 30); noStroke(); rect(doorX + 20, openingY, doorW - 40, openingH, 3); if (collectedItem != null) { noFill(); stroke(255, 215, 0, 100); strokeWeight(2); rect(doorX + 18, openingY - 2, doorW - 36, openingH + 4, 3); } } fill(120, 120, 130); rect(doorX + 5, doorY + doorH/2 - 11, 12, 22, 2);
+    doorOpen = isHovering;
+    if (isHovering && collectedItem != null) cursor(HAND);
+    fill(35, 35, 40);
+    stroke(25);
+    strokeWeight(3);
+    rect(doorX, doorY, doorW, doorH, 4);
+    float openingY = doorY + 12, openingH = doorH - 28;
+    if (doorOpen) {
+      fill(45, 45, 50);
+      noStroke();
+      rect(doorX + 20, openingY, doorW - 40, openingH, 3);
+      if (collectedItem != null) {
+        pushMatrix();
+        translate(doorX + doorW/2, openingY + openingH/2);
+        fill(0, 0, 0, 60);
+        noStroke();
+        ellipse(0, 10, 50, 10);
+        rotate(HALF_PI);
+        if (collectedItem.itemImage != null) {
+          imageMode(CENTER);
+          tint(255, 255);
+          image(collectedItem.itemImage, 0, 0, 50, 45);
+          noTint();
+        } else {
+          fill(collectedItem.snackColor);
+          stroke(0);
+          strokeWeight(1.5);
+          rect(-25, -22.5, 50, 45, 3);
+        }
+        popMatrix();
+        imageMode(CORNER);
+      }
+      noFill();
+      if (collectedItem != null) stroke(255, 215, 0, 150);
+      else stroke(120, 120, 130, 100);
+      strokeWeight(3);
+      rect(doorX + 18, openingY - 2, doorW - 36, openingH + 4, 3);
+    } else {
+      fill(25, 25, 30);
+      noStroke();
+      rect(doorX + 20, openingY, doorW - 40, openingH, 3);
+      if (collectedItem != null) {
+        noFill();
+        stroke(255, 215, 0, 100);
+        strokeWeight(2);
+        rect(doorX + 18, openingY - 2, doorW - 36, openingH + 4, 3);
+      }
+    }
+    fill(120, 120, 130);
+    rect(doorX + 5, doorY + doorH/2 - 11, 12, 22, 2);
     float numpadX = vmX + 120, numpadY = vmY - 50;
-    renderNumpad2D(numpadX, numpadY); renderInputDisplay2D(numpadX, numpadY - 78); renderCoinSlot(numpadX, numpadY - 93); renderRefundButton(numpadX, numpadY + 147);
-    fill(60, 60, 65); stroke(30); strokeWeight(3); rect(vmX - vmWidth/2, vmY + vmHeight/2 - 15, vmWidth, 18, 0, 0, 4, 4);
+    renderNumpad2D(numpadX, numpadY);
+    renderInputDisplay2D(numpadX, numpadY - 78);
+    renderCoinSlot(numpadX, numpadY - 93);
+    renderRefundButton(numpadX, numpadY + 147);
+    fill(60, 60, 65);
+    stroke(30);
+    strokeWeight(3);
+    rect(vmX - vmWidth/2, vmY + vmHeight/2 - 15, vmWidth, 18, 0, 0, 4, 4);
     popMatrix();
   }
 
@@ -129,7 +227,7 @@ class VendingMachine {
       }
     }
   }
-  
+
   void renderStickers(float vmX, float vmY, float vmWidth, float vmHeight) {
     pushMatrix();
     translate(vmX - vmWidth/2 + 24, vmY + vmHeight/2 - 160);
@@ -183,7 +281,7 @@ class VendingMachine {
     text("NEW!", vmX - 155, vmY - vmHeight/2 + 130);
     rotate(0.3);
   }
-  
+
   void renderItemSupports(float startX, float startY, float spacingX, float spacingY) {
     float itemW = 62;
     float itemH = 65;
@@ -236,8 +334,8 @@ class VendingMachine {
     // posisi x slot: numpadX - 12
     float slotX = x - 12;
     float slotY = y;
-    
-    // Logika Hover 
+
+    // Logika Hover
     boolean isHovering = isMouseOverCoinSlot(mouseX, mouseY);
     if (isHovering) {
       cursor(HAND); // Ganti kursor
@@ -250,15 +348,15 @@ class VendingMachine {
       strokeWeight(2);
     }
     // ==========================
-    
+
     rect(slotX, slotY, 40, 10, 2); // frame
-    
+
     // lubang slot koin
     fill(20, 20, 25); // warna hitam (lubang)
     noStroke();
     rect(slotX + 10, slotY + 2, 20, 6, 1); // lubang
   }
-  
+
   // ini dipakai oleh main.pde untuk tahu ke mana koin harus terbang
   float[] getCoinSlotPos() {
     float numpadX = 380 + 120; // x tengah vm + 120
@@ -267,7 +365,7 @@ class VendingMachine {
     float slotY = numpadY - 93; // posisi y slot
     float slotW = 40; // lebar slot
     float slotH = 10; // tinggi slot
-    
+
     // kembalikan posisi tengah (x, y) dari slot
     return new float[] { slotX + slotW / 2, slotY + slotH / 2 };
   }
@@ -279,7 +377,7 @@ class VendingMachine {
     float btnX = x + 5;
     float btnY = y;
     float btnSize = 15; // ukuran tombol
-    
+
     // deteksi hover
     if (isMouseOverRefundButton(mouseX, mouseY)) {
       fill(255, 60, 60); // warna merah terang saat hover
@@ -287,11 +385,11 @@ class VendingMachine {
     } else {
       fill(200, 0, 0); // warna merah standar
     }
-    
+
     stroke(100, 0, 0);
     strokeWeight(2);
     rect(btnX, btnY, btnSize, btnSize, 3); // gambar tombol
-    
+
     // teks 'R' (refund)
     fill(255);
     noStroke();
@@ -305,7 +403,7 @@ class VendingMachine {
     stroke(30);
     strokeWeight(2);
     rect(x - 20, y - 8, 65, 150, 4); // tinggi 150
-    
+
     String[] buttons = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "OK"};
     for (int i = 0; i < 12; i++) {
       int row = i / 3;
@@ -315,7 +413,7 @@ class VendingMachine {
 
       if (isMouseOverButton2D(btnX, btnY, 16, 30)) {
         fill(100, 150, 220); // warna hover tombol
-        cursor(HAND); // 
+        cursor(HAND); //
       } else {
         fill(70, 70, 85); // warna standar tombol
       }
@@ -379,7 +477,7 @@ class VendingMachine {
     float slotH = 10;
     return (mx > slotX && mx < slotX + slotW && my > slotY && my < slotY + slotH);
   }
-  
+
   boolean isMouseOverRefundButton(float mx, float my) {
     float numpadX = 420 + 120;
     float numpadY = height - 240 - 50;
@@ -395,7 +493,7 @@ class VendingMachine {
     errorMessage = ""; // hapus error message saat user masukkan koin
     errorTimer = 0;
   }
-  
+
   int manualRefund() {
     int amountToRefund = coinsInserted;
     coinsInserted = 0; // kosongkan koin di mesin
@@ -491,14 +589,14 @@ class VendingMachine {
       inputCode = "";
       return 0; // tidak ada refund
     }
-    
+
     if (coinsInserted < PRICE) {
       errorMessage = "NOT ENOUGH!";
       errorTimer = 0;
       inputCode = "";
       return 0; // tidak ada refund
     }
-    
+
     // 3. cari item yang sesuai dengan kode input
     for (Item item : items) {
       if (item.code.equals(inputCode)) {
@@ -507,7 +605,7 @@ class VendingMachine {
           // --- PEMBELIAN BERHASIL ---
           int overpayment = coinsInserted - PRICE; // hitung kembalian
           coinsInserted = 0; // kosongkan koin di mesin
-          
+
           // mulai proses jatuh
           selectedItem = item;
           selectedItem.startFalling(); // trigger animasi jatuh
@@ -520,7 +618,7 @@ class VendingMachine {
           isProcessing = true; // set flag processing
           processingTimer = 0;
           inputCode = "";
-          
+
           // 5. handle kembalian (overpayment)
           if (overpayment > 0) {
             errorMessage = "REFUND " + overpayment + " COIN";
@@ -531,7 +629,6 @@ class VendingMachine {
             errorMessage = ""; // tidak ada error
             return 0; // tidak ada refund
           }
-          
         } else {
           // --- STOK HABIS ---
           errorMessage = "SOLD";
