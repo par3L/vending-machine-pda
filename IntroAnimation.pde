@@ -1,133 +1,187 @@
-// Kelas untuk animasi intro 3D dengan kurva bezier
+// === KELAS INTRO ANIMATION ===
+// class untuk animasi intro 3D dengan 6 fase, bezier curves, dan particle system
+// menggambarkan alur vending machine: partikel → mesin → koin → snack → text
 class IntroAnimation {
-  int phase; // fase animasi (0-5)
-  float phaseProgress; // progress dalam fase (0-1)
-  float totalTime; // total waktu animasi
+  // === VARIABEL FASE & TIMING ===
+  int phase;           // fase animasi sekarang (0-5, total 6 fase)
+  float phaseProgress; // progress dalam fase (0.0-1.0, normalized)
+  float totalTime;     // total waktu animasi berjalan (detik)
   
-  // Objek animasi
-  ArrayList<Particle3D> particles; // partikel 3D
-  float cameraAngle; // sudut kamera
-  float cameraDistance; // jarak kamera
-  PVector cameraPos; // posisi kamera
+  // === VARIABEL PARTICLE SYSTEM ===
+  // arraylist = struktur data dinamis untuk collection object
+  ArrayList<Particle3D> particles; // array 50 partikel 3D background
   
-  // Untuk animasi koin
-  ArrayList<Coin3D> coins3D;
-  float coinAnimProgress;
+  // === VARIABEL KAMERA 3D ===
+  float cameraAngle;    // sudut rotasi kamera (radian)
+  float cameraDistance; // jarak kamera dari origin (pixel)
+  // PVector = class untuk vektor 3D (x, y, z)
+  PVector cameraPos;    // posisi kamera dalam 3D space
   
-  // Untuk animasi mesin vending 3D
-  float machineScale;
-  float machineRotation;
+  // === VARIABEL ANIMASI KOIN ===
+  ArrayList<Coin3D> coins3D; // array koin 3D yang terbang dengan bezier curve
+  float coinAnimProgress;    // progress animasi koin (0.0-1.0)
   
-  // Untuk animasi snack jatuh
-  float snackFallProgress;
-  PVector snackPos;
+  // === VARIABEL ANIMASI MESIN VENDING 3D ===
+  float machineScale;    // scale mesin (0-1, untuk zoom in effect)
+  float machineRotation; // rotasi mesin (radian, untuk spin effect)
   
-  // Font untuk teks
-  PFont titleFont, instructionFont;
+  // === VARIABEL ANIMASI SNACK JATUH ===
+  float snackFallProgress; // progress animasi snack jatuh (0.0-1.0)
+  PVector snackPos;        // posisi snack dalam 3D space (x, y, z)
   
+  // === FONT ===
+  // PFont = class untuk custom font di Processing
+  PFont titleFont, instructionFont; // font untuk judul dan instruksi
+  
+  // === CONSTRUCTOR ===
+  // inisialisasi semua variabel dan object saat IntroAnimation dibuat
   IntroAnimation() {
-    phase = 0;
-    phaseProgress = 0;
-    totalTime = 0;
-    particles = new ArrayList<Particle3D>();
-    coins3D = new ArrayList<Coin3D>();
-    cameraAngle = 0;
-    cameraDistance = 600;
-    cameraPos = new PVector(0, 0, 0);
-    machineScale = 0;
-    machineRotation = 0;
-    snackFallProgress = 0;
-    snackPos = new PVector(0, -100, 0);
-    coinAnimProgress = 0;
+    // === INIT FASE & TIMING ===
+    phase = 0;         // mulai dari fase 0
+    phaseProgress = 0; // progress 0% (awal fase)
+    totalTime = 0;     // timer mulai dari 0
     
-    // Load atau buat font
+    // === INIT COLLECTIONS ===
+    particles = new ArrayList<Particle3D>(); // buat arraylist kosong
+    coins3D = new ArrayList<Coin3D>();       // buat arraylist kosong
+    
+    // === INIT KAMERA ===
+    cameraAngle = 0;                      // sudut awal 0 (frontal)
+    cameraDistance = 600;                 // jarak 600 pixel dari origin
+    cameraPos = new PVector(0, 0, 0);    // posisi awal di origin
+    
+    // === INIT ANIMASI ===
+    machineScale = 0;                     // mesin mulai invisible (scale 0)
+    machineRotation = 0;                  // rotasi awal 0
+    snackFallProgress = 0;                // snack belum jatuh
+    snackPos = new PVector(0, -100, 0);  // posisi awal snack (di atas)
+    coinAnimProgress = 0;                 // koin belum terbang
+    
+    // === LOAD FONT ===
+    // try-catch = error handling (coba load font, jika gagal gunakan fallback)
     try {
-      titleFont = createFont("Arial Bold", 48);
-      instructionFont = createFont("Arial", 20);
+      // createFont = buat font dari system font
+      titleFont = createFont("Arial Bold", 48);      // font besar untuk judul
+      instructionFont = createFont("Arial", 20);     // font kecil untuk instruksi
     } catch (Exception e) {
+      // fallback jika Arial Bold tidak ada
       titleFont = createFont("Arial", 48);
       instructionFont = createFont("Arial", 20);
     }
     
-    // Inisialisasi partikel background
+    // === INIT 50 PARTIKEL BACKGROUND ===
+    // loop untuk create 50 object Particle3D dengan posisi dan warna random
     for (int i = 0; i < 50; i++) {
       particles.add(new Particle3D(
-        random(-500, 500),
-        random(-300, 300),
-        random(-500, 100),
-        color(255, random(100, 255), random(100, 200))
+        random(-500, 500),                // x acak (-500 sampai 500)
+        random(-300, 300),                // y acak (-300 sampai 300)
+        random(-500, 100),                // z acak (-500 sampai 100)
+        color(255, random(100, 255), random(100, 200)) // warna cyan-biru acak
       ));
     }
   }
   
+  // === FUNGSI RESET ===
+  // reset semua variabel ke nilai awal (dipanggil saat user tekan R)
   void reset() {
-    phase = 0;
-    phaseProgress = 0;
-    totalTime = 0;
-    machineScale = 0;
-    machineRotation = 0;
-    snackFallProgress = 0;
-    coinAnimProgress = 0;
-    coins3D.clear();
+    phase = 0;            // kembali ke fase 0
+    phaseProgress = 0;    // reset progress
+    totalTime = 0;        // reset timer
+    machineScale = 0;     // mesin kembali invisible
+    machineRotation = 0;  // rotasi ke 0
+    snackFallProgress = 0; // snack ke posisi awal
+    coinAnimProgress = 0;  // koin ke awal
+    coins3D.clear();      // hapus semua koin 3D (clear arraylist)
   }
   
+  // === FUNGSI UPDATE ===
+  // dipanggil setiap frame untuk update state animasi
   void update() {
-    totalTime += 0.016; // ~60fps
-    phaseProgress += 0.008; // kecepatan animasi
+    // increment timer (0.016 ≈ 1/60 detik = 1 frame @ 60fps)
+    totalTime += 0.016;
     
-    // Update particles
+    // increment phase progress (0.008 = kecepatan animasi)
+    // nilai lebih besar = animasi lebih cepat
+    phaseProgress += 0.008;
+    
+    // === UPDATE SEMUA PARTIKEL ===
+    // enhanced for loop untuk iterate collection
     for (Particle3D p : particles) {
-      p.update();
+      p.update(); // panggil method update() setiap partikel
     }
     
-    // Update camera dengan smooth movement
-    float targetAngle = sin(totalTime * 0.5) * 0.3;
+    // === UPDATE KAMERA (SMOOTH SWAY) ===
+    // hitung target angle dengan sin wave (efek goyang smooth)
+    float targetAngle = sin(totalTime * 0.5) * 0.3; // amplitude 0.3 radian
+    
+    // lerp = linear interpolation (smooth transition dari nilai sekarang ke target)
+    // syntax: lerp(start, end, amount) - amount 0.05 = 5% per frame
     cameraAngle = lerp(cameraAngle, targetAngle, 0.05);
     
-    // Phase progression
+    // === PHASE PROGRESSION ===
+    // cek apakah phase selesai (progress >= 100%)
     if (phaseProgress >= 1.0) {
-      phaseProgress = 0;
-      phase++;
+      phaseProgress = 0; // reset progress untuk phase berikutnya
+      phase++;           // increment ke phase berikutnya
+      
+      // clamp phase ke maksimal 5 (total 6 phase: 0-5)
       if (phase > 5) {
-        phase = 5; // stay at last phase
+        phase = 5; // stay di phase terakhir (loop idle)
       }
       
-      // Trigger events per phase
+      // === TRIGGER EVENTS PER PHASE ===
+      // spawn object atau setup animasi saat masuk phase tertentu
       if (phase == 2) {
-        // Spawn coins
+        // --- PHASE 2: SPAWN 5 KOIN 3D ---
         for (int i = 0; i < 5; i++) {
           coins3D.add(new Coin3D(
-            random(-200, 200),
-            -300,
-            random(-100, 100)
+            random(-200, 200),  // x acak
+            -300,               // y di atas (akan terbang turun)
+            random(-100, 100)   // z acak (depth)
           ));
         }
       }
     }
     
-    // Update animations based on phase
+    // === UPDATE ANIMASI BERDASARKAN PHASE ===
+    // switch-case untuk handle logic setiap fase
     switch (phase) {
-      case 0: // Logo fade in + particles
+      case 0: // --- PHASE 0: MESIN ZOOM IN + PARTIKEL ---
+        // scale mesin dari 0 ke 1 (zoom in effect) dengan easing
         machineScale = easeInOutCubic(phaseProgress) * 1.0;
         break;
-      case 1: // Rotate machine
+        
+      case 1: // --- PHASE 1: MESIN ROTASI 360° ---
+        // rotasi mesin full circle (TWO_PI = 360° = 2π radian)
         machineRotation = easeInOutCubic(phaseProgress) * TWO_PI;
         break;
-      case 2: // Coins flying
+        
+      case 2: // --- PHASE 2: KOIN TERBANG DENGAN BEZIER CURVE ---
+        // update progress koin dengan easing
         coinAnimProgress = easeInOutCubic(phaseProgress);
+        
+        // update semua koin (mereka follow bezier path masing-masing)
         for (Coin3D coin : coins3D) {
-          coin.update(coinAnimProgress);
+          coin.update(coinAnimProgress); // pass progress 0-1
         }
         break;
-      case 3: // Snack falling
+        
+      case 3: // --- PHASE 3: SNACK JATUH DENGAN BEZIER CURVE ---
+        // update progress snack dengan easing
         snackFallProgress = easeInOutCubic(phaseProgress);
+        
+        // bezierPoint = hitung posisi di bezier curve (control points: -100, -50, 50, 150)
+        // parameter: (p0, p1, p2, p3, t) - p0-p3 = control points, t = progress (0-1)
         float fallY = bezierPoint(-100, -50, 50, 150, snackFallProgress);
-        snackPos.y = fallY;
+        snackPos.y = fallY; // update posisi y snack
         break;
-      case 4: // Machine final position
+        
+      case 4: // --- PHASE 4: MESIN ROTASI TAMBAHAN 180° ---
+        // rotasi dari 360° (TWO_PI) sampai 540° (TWO_PI + PI)
         machineRotation = TWO_PI + easeInOutCubic(phaseProgress) * PI;
         break;
-      case 5: // Idle with instructions
+        
+      case 5: // --- PHASE 5: IDLE DENGAN INSTRUKSI ---
         machineRotation = TWO_PI + PI;
         break;
     }
@@ -459,8 +513,17 @@ class IntroAnimation {
     hint(ENABLE_DEPTH_TEST);
   }
   
-  // Easing function untuk animasi smooth
+  // === FUNGSI EASING (CUBIC EASE-IN-OUT) ===
+  // menghasilkan animasi smooth dengan percepatan di awal dan perlambatan di akhir
+  // input: t (progress 0-1), output: eased value (0-1)
+  // cubic = kurva kubik (pangkat 3) untuk transisi halus
   float easeInOutCubic(float t) {
+    // operator ternary: (kondisi) ? nilai_true : nilai_false
+    // jika t < 0.5 (paruh pertama):
+    //   ease in: 4 * t³ (percepatan lambat ke cepat)
+    // jika t >= 0.5 (paruh kedua):
+    //   ease out: 1 - (-2t + 2)³ / 2 (perlambatan cepat ke lambat)
+    // hasilnya: slow → fast → slow (S-curve)
     return t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2;
   }
 }
@@ -501,29 +564,53 @@ class Particle3D {
   }
 }
 
-// Kelas untuk koin 3D yang terbang
+// === KELAS COIN3D ===
+// class untuk koin 3D yang terbang mengikuti bezier curve
 class Coin3D {
-  PVector startPos;
-  PVector endPos;
-  PVector currentPos;
-  float rotation;
-  float rotSpeed;
+  // === VARIABEL POSISI ===
+  PVector startPos;   // posisi awal koin (spawn point)
+  PVector endPos;     // posisi akhir koin (target/destination)
+  PVector currentPos; // posisi sekarang (animated)
   
+  // === VARIABEL ROTASI ===
+  float rotation;  // sudut rotasi sekarang (radian)
+  float rotSpeed;  // kecepatan rotasi (radian per update)
+  
+  // === CONSTRUCTOR ===
   Coin3D(float x, float y, float z) {
+    // set posisi awal dari parameter
     startPos = new PVector(x, y, z);
-    endPos = new PVector(random(-50, 50), random(50, 100), random(40, 60));
+    
+    // generate posisi akhir random (area tengah bawah)
+    endPos = new PVector(
+      random(-50, 50),   // x: -50 sampai 50 (tengah)
+      random(50, 100),   // y: 50 sampai 100 (bawah)
+      random(40, 60)     // z: 40 sampai 60 (depth mid)
+    );
+    
+    // copy() = duplicate PVector (tidak reference yang sama)
     currentPos = startPos.copy();
+    
+    // random initial rotation
     rotation = random(TWO_PI);
+    
+    // random rotation speed
     rotSpeed = random(0.1, 0.3);
   }
   
+  // === FUNGSI UPDATE ===
+  // update posisi koin sepanjang bezier curve berdasarkan progress
   void update(float progress) {
-    // Bezier curve untuk path yang smooth
+    // progress = 0.0 (start) sampai 1.0 (end)
     float bezierProgress = progress;
+    
+    // === DEFINE BEZIER CONTROL POINTS ===
+    // bezier curve memerlukan 4 points: start, control1, control2, end
+    // control points menentukan kelengkungan kurva
     PVector control1 = new PVector(
-      startPos.x + random(-100, 100),
-      startPos.y + 100,
-      startPos.z + random(-50, 50)
+      startPos.x + random(-100, 100), // x dengan offset random (create variety)
+      startPos.y + 100,                // y 100 pixel di bawah start (arc upward)
+      startPos.z + random(-50, 50)     // z dengan offset random (3D depth)
     );
     PVector control2 = new PVector(
       endPos.x + random(-50, 50),

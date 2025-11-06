@@ -1,227 +1,460 @@
 
 import processing.sound.*;
 
-// kelas vending machine
+// === KELAS VENDING MACHINE ===
+// class utama yang handle semua logic mesin vending
+// termasuk render 2D, numpad, pembelian, animasi jatuh, dll
 class VendingMachine {
-  ArrayList<Item> items; // daftar snack
-  String inputCode; // kode input
-  boolean isProcessing; // status proses
-  int processingTimer; // timer proses
-  Item selectedItem; // item diproses
-  ArrayList<Item> itemsToSlide; // animasi slide (tidak dipakai)
-  String errorMessage; // pesan error
-  int errorTimer; // timer error
-  Item collectedItem; // item di pintu
-  boolean doorOpen; // pintu terbuka
-  final int PRICE = 5; // harga item
-  int coinsInserted = 0; // koin masuk
+  // === VARIABEL DATA ===
+  // arraylist = struktur data dinamis yang bisa bertambah/kurang
+  ArrayList<Item> items; // daftar semua snack di mesin (12 item: 4 row x 3 col)
+  
+  // === VARIABEL NUMPAD & INPUT ===
+  String inputCode; // kode yang user ketik di numpad (2 digit, contoh: "23")
+  
+  // === VARIABEL PROSES PEMBELIAN ===
+  boolean isProcessing; // true = mesin sedang proses jatuh item
+  int processingTimer; // counter frame untuk timing proses
+  Item selectedItem; // referensi ke item yang sedang jatuh
+  ArrayList<Item> itemsToSlide; // array untuk animasi slide (fitur tidak dipakai)
+  
+  // === VARIABEL ERROR MESSAGE ===
+  String errorMessage; // text error di LCD (contoh: "NO COINS!", "SOLD", dll)
+  int errorTimer; // counter frame untuk auto-hide error message (2 detik)
+  
+  // === VARIABEL PICKUP DOOR ===
+  Item collectedItem; // item yang sudah jatuh dan siap diambil di pintu
+  boolean doorOpen; // true = pintu terbuka (saat mouse hover)
+  
+  // === KONSTANTA HARGA ===
+  final int PRICE = 5; // harga setiap item (5 koin)
+  
+  // === VARIABEL KOIN ===
+  int coinsInserted = 0; // jumlah koin yang sudah masuk ke mesin
 
+  // === CONSTRUCTOR ===
+  // fungsi yang dipanggil saat object VendingMachine dibuat
   VendingMachine() {
-    items = new ArrayList<Item>();
-    inputCode = "";
-    isProcessing = false;
-    itemsToSlide = new ArrayList<Item>();
-    errorMessage = "";
-    errorTimer = 0;
-    collectedItem = null;
-    doorOpen = false;
-    initializeItems();
+    // inisialisasi semua variabel ke nilai awal
+    items = new ArrayList<Item>(); // buat arraylist kosong
+    inputCode = ""; // kode masih kosong
+    isProcessing = false; // tidak ada proses
+    itemsToSlide = new ArrayList<Item>(); // buat arraylist kosong
+    errorMessage = ""; // tidak ada error
+    errorTimer = 0; // timer mulai dari 0
+    collectedItem = null; // tidak ada item di pintu
+    doorOpen = false; // pintu tertutup
+    initializeItems(); // panggil fungsi untuk setup semua snack
   }
 
 
+  // === FUNGSI INISIALISASI ITEM ===
+  // setup 12 snack di grid 4x3 (4 row, 3 column)
   void initializeItems() {
-    color[] colors = { color(255, 50, 50), color(255, 150, 0), color(50, 100, 255), color(255, 200, 0), color(150, 50, 200), color(50, 200, 50), color(200, 100, 50), color(255, 100, 150), color(100, 200, 255), color(255, 180, 50), color(180, 100, 200), color(255, 80, 100) };
-    String[] names = { "Cheetos Hot", "Bugles", "Chex Mix", "Doritos", "Ranch Doritos", "Haldirams", "Lays BBQ", "Lays Salt", "Micos", "Oishi", "Pringles", "Snatts" };
-    String[] imagePaths = { "assets/images/cheetos.png", "assets/images/bugles.png", "assets/images/chexMix.png", "assets/images/doritos.png", "assets/images/doritosRanch.png", "assets/images/haldirams.png", "assets/images/laysBBQ.png", "assets/images/laysSalt.png", "assets/images/micos.png", "assets/images/oishi.png", "assets/images/pringles.png", "assets/images/snatts.png" };
+    // array warna untuk setiap snack (12 warna unik)
+    color[] colors = {
+      color(255, 50, 50),   // merah (cheetos)
+      color(255, 150, 0),   // orange (bugles)
+      color(50, 100, 255),  // biru (chex mix)
+      color(255, 200, 0),   // kuning (doritos)
+      color(150, 50, 200),  // ungu (ranch doritos)
+      color(50, 200, 50),   // hijau (haldirams)
+      color(200, 100, 50),  // coklat (lays bbq)
+      color(255, 100, 150), // pink (lays salt)
+      color(100, 200, 255), // cyan (micos)
+      color(255, 180, 50),  // gold (oishi)
+      color(180, 100, 200), // lavender (pringles)
+      color(255, 80, 100)   // salmon (snatts)
+    };
+    
+    // array nama snack (12 snack)
+    String[] names = {
+      "Cheetos Hot", "Bugles", "Chex Mix", "Doritos",
+      "Ranch Doritos", "Haldirams", "Lays BBQ", "Lays Salt",
+      "Micos", "Oishi", "Pringles", "Snatts"
+    };
+    
+    // array path gambar snack (12 gambar PNG)
+    String[] imagePaths = {
+      "assets/images/cheetos.png", "assets/images/bugles.png",
+      "assets/images/chexMix.png", "assets/images/doritos.png",
+      "assets/images/doritosRanch.png", "assets/images/haldirams.png",
+      "assets/images/laysBBQ.png", "assets/images/laysSalt.png",
+      "assets/images/micos.png", "assets/images/oishi.png",
+      "assets/images/pringles.png", "assets/images/snatts.png"
+    };
+    
+    // loop nested untuk buat grid 4x3
     for (int row = 0; row < 4; row++) {
       for (int col = 0; col < 3; col++) {
+        // buat kode 2 digit (row+1)(col+1), contoh: row=0 col=0 → "11"
         String code = "" + (row + 1) + (col + 1);
+        
+        // hitung index warna dengan modulo (loop balik jika lebih dari 12)
         int colorIndex = (row * 3 + col) % colors.length;
-        items.add(new Item(names[colorIndex], code, colors[colorIndex], row, col, imagePaths[row * 3 + col]));
+        
+        // buat object Item baru dan tambahkan ke arraylist
+        items.add(new Item(
+          names[colorIndex],  // nama snack
+          code,               // kode numpad
+          colors[colorIndex], // warna fallback
+          row,                // posisi row
+          col,                // posisi col
+          imagePaths[row * 3 + col] // path gambar
+        ));
       }
     }
   }
 
 
+  // === FUNGSI DISPLAY UTAMA ===
+  // dipanggil setiap frame dari main.pde untuk render mesin
   void display(int skyMode) {
+    // delegate ke fungsi render 2D (skyMode untuk lighting adjustment)
     renderVendingMachine2D(skyMode);
   }
 
 
+  // === FUNGSI RENDER VENDING MACHINE 2D ===
+  // render seluruh mesin vending dalam 2D (body, glass, numpad, door, dll)
   void renderVendingMachine2D(int skyMode) {
+    // pushMatrix = save state transformasi (isolasi drawing)
     pushMatrix();
+    
+    // camera() = reset ke default camera 2D (cancel 3D transformations)
     camera();
-    float vmX = 420, vmY = height - 240, vmWidth = 360, vmHeight = 480;
-    float vmSideW = 35, vmLeft = vmX - vmWidth/2, vmTop = vmY - vmHeight/2;
-    color baseBodyColor = color(160, 45, 45), basePanelColor = color(180, 55, 55);
-    color sideBodyColor = color(red(baseBodyColor) * 0.7, green(baseBodyColor) * 0.7, blue(baseBodyColor) * 0.7);
-    color sidePanelColor = color(red(basePanelColor) * 0.7, green(basePanelColor) * 0.7, blue(basePanelColor) * 0.7);
-    noStroke();
-    fill(sideBodyColor);
+    
+    // === KONSTANTA DIMENSI MESIN ===
+    float vmX = 420;          // posisi x tengah mesin
+    float vmY = height - 240; // posisi y tengah mesin
+    float vmWidth = 360;      // lebar mesin
+    float vmHeight = 480;     // tinggi mesin
+    float vmSideW = 35;       // lebar sisi 3D (pseudo 3D effect)
+    
+    // koordinat kiri atas mesin (untuk helper)
+    float vmLeft = vmX - vmWidth/2;
+    float vmTop = vmY - vmHeight/2;
+    
+    // === WARNA MESIN ===
+    // warna base (merah maroon)
+    color baseBodyColor = color(160, 45, 45);   // body utama
+    color basePanelColor = color(180, 55, 55);  // panel atas
+    
+    // warna sisi (70% dari base untuk efek 3D shadow)
+    color sideBodyColor = color(
+      red(baseBodyColor) * 0.7,
+      green(baseBodyColor) * 0.7,
+      blue(baseBodyColor) * 0.7
+    );
+    color sidePanelColor = color(
+      red(basePanelColor) * 0.7,
+      green(basePanelColor) * 0.7,
+      blue(basePanelColor) * 0.7
+    );
+    
+    noStroke(); // matikan border untuk render
+    
+    // === RENDER SISI KIRI BODY (PSEUDO 3D) ===
+    fill(sideBodyColor); // warna gelap untuk sisi
+    pushMatrix();
+    translate(vmLeft, vmTop); // pindah ke pojok kiri atas
+    // quad = gambar quadrilateral (4 titik bebas)
+    // membuat trapesium untuk efek kedalaman 3D
+    quad(
+      0, 0,                           // pojok kiri atas depan
+      -vmSideW, +vmSideW,             // pojok kiri atas belakang
+      -vmSideW, vmHeight + vmSideW,   // pojok kiri bawah belakang
+      0, vmHeight                     // pojok kiri bawah depan
+    );
+    popMatrix();
+    
+    // === RENDER SISI KIRI PANEL ATAS (PSEUDO 3D) ===
+    fill(sidePanelColor); // warna panel sisi
     pushMatrix();
     translate(vmLeft, vmTop);
-    quad(0, 0, -vmSideW, +vmSideW, -vmSideW, vmHeight + vmSideW, 0, vmHeight);
+    quad(
+      0, 0,                      // pojok kiri atas depan
+      -vmSideW, +vmSideW,        // pojok kiri atas belakang
+      -vmSideW, 40 + vmSideW,    // pojok kiri bawah belakang (tinggi 40)
+      0, 40                      // pojok kiri bawah depan
+    );
     popMatrix();
-    fill(sidePanelColor);
-    pushMatrix();
-    translate(vmLeft, vmTop);
-    quad(0, 0, -vmSideW, +vmSideW, -vmSideW, 40 + vmSideW, 0, 40);
-    popMatrix();
-    fill(baseBodyColor);
+    
+    // === RENDER BODY UTAMA ===
+    fill(baseBodyColor); // warna merah maroon
     noStroke();
     rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, vmHeight);
-    fill(basePanelColor);
+    
+    // === RENDER PANEL ATAS ===
+    fill(basePanelColor); // warna merah lebih terang
     noStroke();
-    rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, 40);
-    fill(240, 220, 200);
-    rect(vmX - vmWidth/2 + 10, vmY - vmHeight/2 + 8, vmWidth - 20, 25, 4);
-    fill(100, 30, 30);
+    rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, 40); // tinggi 40 pixel
+    
+    // === RENDER LABEL PLAT (SIGN) ===
+    fill(240, 220, 200); // warna cream terang
+    rect(vmX - vmWidth/2 + 10, vmY - vmHeight/2 + 8, vmWidth - 20, 25, 4); // rounded rect
+    
+    // text di plat
+    fill(100, 30, 30); // warna coklat gelap
     textAlign(CENTER, CENTER);
     textSize(14);
     text("SNACKS 4 FIVE COINS", vmX, vmY - vmHeight/2 + 20);
-    renderStickers(vmX, vmY, vmWidth, vmHeight); // stiker
-    float glassX = vmX - 130, glassY = vmY - vmHeight/2 + 60, glassW = 220, glassH = 320;
-    fill(45, 45, 50);
-    stroke(25);
+    
+    // render stiker dekorasi (sale, quality, smiley, new)
+    renderStickers(vmX, vmY, vmWidth, vmHeight);
+    
+    // === RENDER GLASS WINDOW (DISPLAY SNACK) ===
+    float glassX = vmX - 130;           // posisi x glass (kiri dari tengah)
+    float glassY = vmY - vmHeight/2 + 60; // posisi y glass (60 px dari atas mesin)
+    float glassW = 220;                 // lebar glass
+    float glassH = 320;                 // tinggi glass
+    
+    // frame glass (border hitam tebal)
+    fill(45, 45, 50); // warna abu gelap (frame metal)
+    stroke(25);       // border hitam
     strokeWeight(4);
-    rect(glassX, glassY, glassW, glassH, 4);
-    fill(150, 180, 200, 40);
+    rect(glassX, glassY, glassW, glassH, 4); // corner radius 4
+    
+    // glass transparan (overlay biru muda)
+    fill(150, 180, 200, 40); // biru muda dengan alpha 40 (sangat transparan)
     noStroke();
-    rect(glassX + 5, glassY + 5, glassW - 10, glassH - 10);
-    fill(255, 255, 255, 50);
+    rect(glassX + 5, glassY + 5, glassW - 10, glassH - 10); // padding 5 pixel
+    
+    // efek highlight glass (reflection/glare)
+    fill(255, 255, 255, 50); // putih semi-transparan
     pushMatrix();
-    translate(glassX + 20, glassY + 30);
-    rotate(-0.2);
-    rect(0, 0, 40, 150);
+    translate(glassX + 20, glassY + 30); // posisi highlight
+    rotate(-0.2); // rotasi -0.2 radian untuk diagonal
+    rect(0, 0, 40, 150); // highlight bar vertikal
     popMatrix();
-    renderItems2D(glassX + 15, glassY + 18); // snack
-    float doorX = glassX, doorY = vmY + vmHeight/2 - 90, doorW = glassW, doorH = 70;
-    boolean isHovering = mouseX > doorX && mouseX < doorX + doorW && mouseY > doorY && mouseY < doorY + doorH;
-    doorOpen = isHovering;
-    if (isHovering && collectedItem != null) cursor(HAND);
-    fill(35, 35, 40);
-    stroke(25);
+    
+    // render semua snack di dalam glass
+    renderItems2D(glassX + 15, glassY + 18);
+    
+    // === RENDER PICKUP DOOR (TEMPAT AMBIL SNACK) ===
+    float doorX = glassX;              // x sama dengan glass
+    float doorY = vmY + vmHeight/2 - 90; // 90 pixel dari bawah mesin
+    float doorW = glassW;              // lebar sama dengan glass
+    float doorH = 70;                  // tinggi pintu 70 pixel
+    
+    // deteksi hover mouse di area door
+    boolean isHovering = (
+      mouseX > doorX && mouseX < doorX + doorW &&
+      mouseY > doorY && mouseY < doorY + doorH
+    );
+    doorOpen = isHovering; // update state door
+    
+    // ubah cursor jadi tangan jika ada item dan mouse hover
+    if (isHovering && collectedItem != null) {
+      cursor(HAND);
+    }
+    
+    // frame door (border luar)
+    fill(35, 35, 40); // abu gelap (metal)
+    stroke(25);       // border hitam
     strokeWeight(3);
-    rect(doorX, doorY, doorW, doorH, 4);
-    float openingY = doorY + 12, openingH = doorH - 28;
+    rect(doorX, doorY, doorW, doorH, 4); // corner radius 4
+    
+    // opening area (lubang di tengah door)
+    float openingY = doorY + 12;       // 12 pixel dari atas door
+    float openingH = doorH - 28;       // tinggi opening (padding atas bawah)
+    
+    // === RENDER DOOR STATE (OPEN/CLOSED) ===
     if (doorOpen) {
+      // --- DOOR TERBUKA ---
+      // background opening (abu lebih terang)
       fill(45, 45, 50);
       noStroke();
-      rect(doorX + 20, openingY, doorW - 40, openingH, 3);
+      rect(doorX + 20, openingY, doorW - 40, openingH, 3); // padding 20 pixel
+      
+      // jika ada item collected, render item di dalam door
       if (collectedItem != null) {
         pushMatrix();
+        // pindah ke tengah opening
         translate(doorX + doorW/2, openingY + openingH/2);
-        fill(0, 0, 0, 60);
+        
+        // shadow item (ellipse bawah)
+        fill(0, 0, 0, 60); // hitam semi-transparan
         noStroke();
-        ellipse(0, 10, 50, 10);
-        rotate(HALF_PI);
+        ellipse(0, 10, 50, 10); // shadow pipih
+        
+        // rotate item 90 derajat (horizontal)
+        rotate(HALF_PI); // HALF_PI = 90 derajat = PI/2
+        
+        // render image atau fallback rect
         if (collectedItem.itemImage != null) {
-          imageMode(CENTER);
-          tint(255, 255);
-          image(collectedItem.itemImage, 0, 0, 50, 45);
-          noTint();
+          imageMode(CENTER); // draw dari center
+          tint(255, 255);    // no tint effect
+          image(collectedItem.itemImage, 0, 0, 50, 45); // ukuran 50x45
+          noTint();          // reset tint
         } else {
+          // fallback jika image tidak ada
           fill(collectedItem.snackColor);
           stroke(0);
           strokeWeight(1.5);
-          rect(-25, -22.5, 50, 45, 3);
+          rect(-25, -22.5, 50, 45, 3); // centered rect
         }
+        
         popMatrix();
-        imageMode(CORNER);
+        imageMode(CORNER); // reset ke default mode
       }
+      
+      // border dalam opening (highlight jika ada item)
       noFill();
-      if (collectedItem != null) stroke(255, 215, 0, 150);
-      else stroke(120, 120, 130, 100);
+      if (collectedItem != null) {
+        stroke(255, 215, 0, 150); // kuning emas (item ready)
+      } else {
+        stroke(120, 120, 130, 100); // abu-abu (empty)
+      }
       strokeWeight(3);
       rect(doorX + 18, openingY - 2, doorW - 36, openingH + 4, 3);
+      
     } else {
-      fill(25, 25, 30);
+      // --- DOOR TERTUTUP ---
+      // background opening gelap (pintu tertutup)
+      fill(25, 25, 30); // hitam gelap
       noStroke();
       rect(doorX + 20, openingY, doorW - 40, openingH, 3);
+      
+      // jika ada item, tampilkan glow hint
       if (collectedItem != null) {
         noFill();
-        stroke(255, 215, 0, 100);
+        stroke(255, 215, 0, 100); // kuning emas semi-transparan (hint)
         strokeWeight(2);
         rect(doorX + 18, openingY - 2, doorW - 36, openingH + 4, 3);
       }
     }
-    fill(120, 120, 130);
-    rect(doorX + 5, doorY + doorH/2 - 11, 12, 22, 2);
-    float numpadX = vmX + 120, numpadY = vmY - 50;
-    renderNumpad2D(numpadX, numpadY);
-    renderInputDisplay2D(numpadX, numpadY - 78);
-    renderCoinSlot(numpadX, numpadY - 93);
-    renderRefundButton(numpadX, numpadY + 147);
-    fill(60, 60, 65);
-    stroke(30);
+    
+    // handle door (pegangan kecil di sisi kiri)
+    fill(120, 120, 130); // abu-abu metal
+    rect(doorX + 5, doorY + doorH/2 - 11, 12, 22, 2); // handle vertikal
+    
+    // === RENDER KOMPONEN UI DI KANAN ===
+    // base koordinat numpad (semua komponen relatif ke ini)
+    float numpadX = vmX + 120; // 120 pixel ke kanan dari center
+    float numpadY = vmY - 50;  // 50 pixel ke atas dari center
+    
+    // render semua komponen UI (dari atas ke bawah)
+    renderNumpad2D(numpadX, numpadY);                 // numpad 3x4
+    renderInputDisplay2D(numpadX, numpadY - 78);     // LCD display (78px di atas numpad)
+    renderCoinSlot(numpadX, numpadY - 93);           // coin slot (93px di atas numpad)
+    renderRefundButton(numpadX, numpadY + 147);      // refund button (147px di bawah numpad)
+    
+    // === RENDER BASE/KAKI MESIN ===
+    fill(60, 60, 65); // abu gelap
+    stroke(30);       // border hitam
     strokeWeight(3);
+    // kaki mesin di bawah (rounded bottom corners saja)
     rect(vmX - vmWidth/2, vmY + vmHeight/2 - 15, vmWidth, 18, 0, 0, 4, 4);
+    
+    // popMatrix = restore transformasi (pasangan pushMatrix di awal)
     popMatrix();
   }
 
-  // ...existing code...
+  // === FUNGSI RENDER ITEMS 2D ===
+  // render semua snack di grid 4x3 dalam glass window
+  // handle 3 state: normal, falling, stuck
   void renderItems2D(float startX, float startY) {
-    float itemW = 70;
-    float itemH = 65;
-    float spacingX = 68;
-    float spacingY = 75;
+    // konstanta ukuran dan jarak item
+    float itemW = 70;      // lebar item
+    float itemH = 65;      // tinggi item
+    float spacingX = 68;   // jarak horizontal antar item
+    float spacingY = 75;   // jarak vertikal antar item
+    
+    // koordinat glass (untuk clipping falling items)
     float glassX = 190;
     float glassY = 88;
     float glassW = 220;
     float glassH = 320;
+    
+    // render support rails dulu (background layers)
     renderItemSupports(startX, startY, spacingX, spacingY);
+    
+    // loop semua item dengan enhanced for loop (for-each)
+    // syntax: for (Type var : collection)
     for (Item item : items) {
+      // skip jika item sudah empty (habis dibeli)
       if (!item.isEmpty) {
+        // hitung posisi default berdasarkan row/col
         float x = startX + item.col * spacingX;
         float y = startY + item.row * spacingY;
+        
+        // === RENDER FALLING/STUCK ITEM ===
         if (item.isFalling || item.isStuck) {
+          // gunakan displayPos dari item (animated position)
           y = item.displayPos.y;
           x = item.displayPos.x;
+          
+          // cek apakah item masih di dalam glass (untuk clipping)
           if (y < glassY + glassH) {
             pushMatrix();
+            // translate ke center item
             translate(x + itemW/2, y + itemH/2);
-            rotate(item.rotation);
-            fill(0, 0, 0, 40);
+            rotate(item.rotation); // rotasi item saat jatuh
+            
+            // shadow item
+            fill(0, 0, 0, 40); // hitam semi-transparan
             noStroke();
-            ellipse(0, itemH/2 + 3, itemW * 0.8, 8);
+            ellipse(0, itemH/2 + 3, itemW * 0.8, 8); // shadow pipih
+            
+            // render image item
             if (item.itemImage != null) {
-              imageMode(CENTER);
-              tint(255, 255);
+              imageMode(CENTER); // draw dari center (karena sudah translate)
+              tint(255, 255);    // no tint (full opacity)
               image(item.itemImage, 0, 0, itemW, itemH);
-              noTint();
+              noTint();          // reset tint
             }
+            
             popMatrix();
           }
         } else {
+          // === RENDER NORMAL ITEM (STATIC) ===
+          
+          // shadow item
           fill(0, 0, 0, 40);
           noStroke();
           ellipse(x + itemW/2, y + itemH + 3, itemW * 0.8, 8);
+          
+          // render image atau fallback rect
           if (item.itemImage != null) {
-            imageMode(CORNER);
-            tint(255, item.alpha);
+            // --- RENDER IMAGE ---
+            imageMode(CORNER); // draw dari kiri atas
+            tint(255, item.alpha); // apply fade in effect dengan alpha
             image(item.itemImage, x, y, itemW, itemH);
-            noTint();
+            noTint(); // reset tint
+            
+            // render layer tambahan untuk efek depth (stock > 1)
+            // semakin banyak stock, semakin banyak layer shadow
             if (item.stock > 0) {
+              // layer 1 (paling depan)
               noStroke();
-              fill(0, 0, 0, 60);
+              fill(0, 0, 0, 60); // hitam 60% transparan
               rect(x - 2, y - 2, itemW, itemH);
+              
               if (item.stock > 1) {
-                fill(0, 0, 0, 40);
+                // layer 2 (tengah)
+                fill(0, 0, 0, 40); // hitam 40% transparan
                 rect(x - 4, y - 4, itemW, itemH);
               }
+              
               if (item.stock > 2) {
-                fill(0, 0, 0, 20);
+                // layer 3 (paling belakang)
+                fill(0, 0, 0, 20); // hitam 20% transparan
                 rect(x - 6, y - 6, itemW, itemH);
               }
             }
           } else {
+            // --- FALLBACK JIKA IMAGE TIDAK ADA ---
+            // render rect berwarna dengan highlight
             fill(item.snackColor);
             stroke(0);
             strokeWeight(1.5);
-            rect(x, y, itemW, itemH, 3);
-            fill(255, 255, 255, 80);
+            rect(x, y, itemW, itemH, 3); // rounded corner 3
+            
+            // highlight bar (efek glossy)
+            fill(255, 255, 255, 80); // putih semi-transparan
             noStroke();
-            rect(x + 3, y + 3, 8, itemH - 20, 2);
+            rect(x + 3, y + 3, 8, itemH - 20, 2); // bar vertikal
           }
         }
       }
@@ -652,36 +885,52 @@ class VendingMachine {
     itemsToSlide.clear();
   }
 
-  // update state vending machine setiap frame
+  // === FUNGSI UPDATE ===
+  // dipanggil setiap frame untuk update state mesin
+  // handle error timer, animasi jatuh, dan proses pembelian
   void update() {
-    // update timer error message dan hapus setelah 120 frame (2 detik)
+    // === UPDATE ERROR MESSAGE TIMER ===
+    // auto-hide error message setelah 2 detik (120 frame @ 60fps)
     if (errorMessage.length() > 0) {
-      errorTimer++;
-      if (errorTimer > 120) { // ubah angka ini untuk durasi error lebih lama/cepat
-        errorMessage = "";
-        errorTimer = 0;
+      errorTimer++; // increment timer setiap frame
+      
+      // cek apakah sudah lebih dari 120 frame (2 detik)
+      if (errorTimer > 120) {
+        errorMessage = ""; // hapus error message
+        errorTimer = 0;    // reset timer
       }
     }
 
-    // update animasi jatuh untuk semua item
+    // === UPDATE ANIMASI ITEM ===
+    // loop semua item untuk update state masing-masing
     for (Item item : items) {
       if (item.isFalling || item.isStuck) {
-        item.updateFalling(); // update fisika jatuh
+        // update fisika jatuh (gravity, bounce, rotation)
+        item.updateFalling();
       } else if (item.alpha < 255) {
-        // fade in item baru setelah item sebelumnya diambil
-        item.alpha += 8; // kecepatan fade in, ubah untuk efek lebih cepat/lambat
-        if (item.alpha > 255) item.alpha = 255;
+        // fade in item baru (setelah item lama diambil)
+        item.alpha += 8; // increment alpha 8 per frame (fade in speed)
+        if (item.alpha > 255) item.alpha = 255; // clamp ke 255 (max opacity)
       }
     }
 
-    // cek apakah proses jatuh sudah selesai
+    // === UPDATE PROSES PEMBELIAN ===
+    // tunggu animasi jatuh selesai sebelum pindahkan ke pickup door
     if (isProcessing) {
-      processingTimer++;
-      // === MODIFIKASI: Timer jeda diperpanjang (1 detik) ===
-      // tunggu 60 frame setelah animasi jatuh selesai
-      if (selectedItem != null && !selectedItem.isFalling && !selectedItem.isStuck && processingTimer > 60) {
-        collectedItem = selectedItem; // pindahkan ke pickup door
-        selectedItem.updateDisplayPosition();
+      processingTimer++; // increment timer proses
+      
+      // cek kondisi: item sudah landing dan timer > 60 frame (1 detik jeda)
+      // conditional boolean chain dengan operator && (AND logic)
+      if (selectedItem != null &&           // item ada
+          !selectedItem.isFalling &&        // tidak lagi jatuh
+          !selectedItem.isStuck &&          // tidak stuck
+          processingTimer > 60) {           // jeda 1 detik (60 frame)
+        
+        // pindahkan item ke pickup door
+        collectedItem = selectedItem;
+        selectedItem.updateDisplayPosition(); // update posisi final
+        
+        // reset state proses
         isProcessing = false;
         selectedItem = null;
       }
