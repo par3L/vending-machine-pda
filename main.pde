@@ -1,11 +1,12 @@
 
 // import library sound untuk efek suara dan musik
-import processing.sound.*;
+  import processing.sound.*;
 
 // === VARIABLE GLOBAL (bisa diakses di semua fungsi) ===
 
 // state management = sistem kontrol state aplikasi (intro atau game)
-int gameState = 0; // 0 = intro, 1 = main game
+//int gameState = 0; // 0 = intro, 1 = main game
+String currentState = "HOME"; // "HOME", "INTRO", "GAME"
 IntroAnimation introAnim; // objek untuk intro 
 
 // objek utama game
@@ -35,7 +36,7 @@ SoundFile coinRefund;    // suara refund koin
 
 int userCoins = 200; // saldo koin user (bisa bertambah/berkurang)
 
-// ArrayList = list dinamis yang bisa bertambah/berkurang ukurannya (beda dari array biasa)
+// ArrayList = list dinamis yang bisa bertambah/berkurang ukurannya
 // ArrayList<AnimatedCoin> = list yang isinya cuma objek animatedcoin
 ArrayList<AnimatedCoin> animatedCoins; // list untuk simpan animasi koin yang terbang
 
@@ -84,259 +85,225 @@ void setup() {
     collectItem.amp(0.7);   // 70% volume
     coinDrop.amp(0.9);      // 90% volume
     coinRefund.amp(0.8);    // 80% volume
-  } catch (Exception e) { // kalau ada file sound tidak ketemu
-    println("debug: " + e.getMessage()); // debug
+  } catch (Exception e) { // catch error no file
+    println("debug: " + e.getMessage()); // debug output
   }
   
   // set posisi window di tengah layar
   // displaywidth/height = ukuran layar monitor
   // width/height = ukuran window kita
   surface.setLocation((displayWidth - width)/2, (displayHeight - height)/2);
+  
+  initHome(); // panggil fungsi dari HomePage.pde
 }
 
-// === FUNGSI DRAW ===
-// dipanggil berulang-ulang (60x per detik) untuk update dan render frame
+// dipanggil berulang-ulang, update dan render frame
 void draw() {
-  // cek state sekarang (intro atau game)
-  if (gameState == 0) {
-    // === STATE INTRO ===
-    introAnim.update();  // update logic animasi intro (gerakan, fase, dll)
-    introAnim.display(); // render animasi intro ke layar
-  } else {
-    // === STATE MAIN GAME ===
-    
-    // update dan render background kota
-    cityBackground.update(); // update animasi awan, bintang, dll
-    cityBackground.display(); // gambar langit, gedung, lampu jalan
-    
-    // ambil mode waktu sekarang untuk lighting
-    int currentSkyMode = cityBackground.getSkyMode(); // 0=pagi, 1=siang, 2=sore, 3=malam
-    
-    // update dan render vending machine
-    vendingMachine.update(); // update state mesin (item jatuh, timer, dll)
-    vendingMachine.display(currentSkyMode); // gambar mesin dengan lighting sesuai waktu
-    
-    // update dan render semua animasi koin yang terbang
-    // loop mundur (dari belakang ke depan) biar aman saat remove item
-    for (int i = animatedCoins.size() - 1; i >= 0; i--) { // size() = jumlah item di arraylist
-      AnimatedCoin ac = animatedCoins.get(i); // get(i) = ambil item di index i
-      ac.update();  // update posisi koin
-      ac.display(); // render koin
-      
-      // kalau koin sudah mati (lifetime habis)
-      if (ac.isDead()) {
-        animatedCoins.remove(i); // remove dari arraylist (hemat memori)
-      }
+  if (currentState.equals("HOME")) {
+    // tampilkan halaman beranda
+    drawHome();
+  } 
+  else if (currentState.equals("INTRO")) {
+    // tampilkan animasi intro
+    introAnim.update();
+    introAnim.display();
+  } 
+  else if (currentState.equals("GAME")) {
+    // tampilkan gameplay utama
+    cityBackground.update();
+    cityBackground.display();
+
+    int currentSkyMode = cityBackground.getSkyMode();
+    vendingMachine.update();
+    vendingMachine.display(currentSkyMode);
+
+    for (int i = animatedCoins.size() - 1; i >= 0; i--) {
+      AnimatedCoin ac = animatedCoins.get(i);
+      ac.update();
+      ac.display();
+      if (ac.isDead()) animatedCoins.remove(i);
     }
-    
-    // render ui overlay (tampilan di atas semua)
-    drawMusicButton();   // tombol play/pause musik
-    drawInstructions();  // text instruksi kontrol
-    drawCoinUI();        // icon koin dan saldo
+
+    drawMusicButton();
+    drawInstructions();
+    drawCoinUI();
   }
 }
 
-// === FUNGSI MOUSECLICKED ===
 // dipanggil otomatis saat mouse diklik (built-in processing)
 void mouseClicked() {
-  // kalau lagi di intro, mouse tidak ada fungsi
-  if (gameState == 0) {
-    return; // keluar dari fungsi (skip semua code di bawah)
+  // STATE: HOME PAGE 
+  if (currentState.equals("HOME")) {
+    mousePressedHome(); // panggil handler dari HomePage.pde
+    return; // stop, jangan lanjut cek klik game
   }
-  
-  // === HANDLE KLIK TOMBOL MUSIK ===
-  float btnX = 60, btnY = height - 40; // posisi tengah tombol
-  float btnW = 100, btnH = 35; // ukuran tombol
-  
-  // cek apakah mouse di dalam area tombol (collision detection kotak)
-  boolean isMusicHover = (
-    mouseX > btnX - btnW/2 && // kiri
-    mouseX < btnX + btnW/2 && // kanan
-    mouseY > btnY - btnH/2 && // atas
-    mouseY < btnY + btnH/2    // bawah
-  );
-  
-  if (isMusicHover) {
-    // toggle musik (play <-> pause)
-    if (musicPlaying) {
-      // kalau lagi playing, pause
-      if (musicTracks[currentTrack] != null) { // cek track tidak null
-        musicTracks[currentTrack].pause(); // pause musik
-      }
-      musicPlaying = false; // update state
-    } else {
-      // kalau lagi pause, play
-      if (musicTracks[currentTrack] != null) {
-        musicTracks[currentTrack].play(); // play musik
-      }
-      musicPlaying = true; // update state
-    }
-    return; // stop cek tombol lain (user sudah klik musik)
+
+  // STATE: INTRO ANIMATION 
+  if (currentState.equals("INTRO")) {
+    // klik di intro tidak melakukan apa pun
+    return;
   }
-  
-  // === HANDLE KLIK COIN SLOT ===
-  // cek apakah mouse di atas coin slot
-  if (vendingMachine.isMouseOverCoinSlot(mouseX, mouseY)) {
-    // cek apakah user masih punya koin
-    if (userCoins > 0) {
-      userCoins--; // kurangi saldo user
-      vendingMachine.addCoin(); // tambah koin di mesin
-      
-      // buat animasi koin terbang
-      float[] targetPos = vendingMachine.getCoinSlotPos(); // ambil posisi slot
-      // add() = tambah objek baru ke arraylist
-      animatedCoins.add(new AnimatedCoin(
-        targetPos[0]+40, targetPos[1] - 50, // posisi awal (atas)
-        targetPos[0]+40, targetPos[1]-30     // posisi target (slot)
-      ));
-      
-      // play sound effect coin drop
-      if (coinDrop != null) coinDrop.play();
-    }
-    return; // stop cek tombol lain
-  }
-  
-  // === HANDLE KLIK TOMBOL REFUND ===
-  if (vendingMachine.isMouseOverRefundButton(mouseX, mouseY)) {
-    int refundedAmount = vendingMachine.manualRefund(); // ambil semua koin dari mesin
-    userCoins += refundedAmount; // kembalikan ke saldo user
+
+  // STATE: MAIN GAME 
+  if (currentState.equals("GAME")) {
+    // --- HANDLE KLIK TOMBOL KELUAR ---
+    float btnX = 60, btnY = height - 40;
+    float btnW = 100, btnH = 35;
     
-    // play sound effect refund kalau ada koin yang dikembalikan
-    if (refundedAmount > 0 && coinRefund != null) {
-      coinRefund.play();
+    boolean isExitHover = (
+      mouseX > btnX - btnW/2 &&
+      mouseX < btnX + btnW/2 &&
+      mouseY > btnY - btnH/2 &&
+      mouseY < btnY + btnH/2
+    );
+    
+    if (isExitHover) {
+      // tidak menghentikan musik, biarkan terus play
+      currentState = "HOME"; 
+      return;
     }
-    return; // stop cek tombol lain
+
+    // --- HANDLE KLIK COIN SLOT ---
+    if (vendingMachine.isMouseOverCoinSlot(mouseX, mouseY)) {
+      if (userCoins > 0) {
+        userCoins--;
+        vendingMachine.addCoin();
+
+        float[] targetPos = vendingMachine.getCoinSlotPos();
+        animatedCoins.add(new AnimatedCoin(
+          targetPos[0] + 40, targetPos[1] - 50,
+          targetPos[0] + 40, targetPos[1] - 30
+        ));
+
+        if (coinDrop != null) coinDrop.play();
+      }
+      return;
+    }
+
+    // --- HANDLE KLIK REFUND ---
+    if (vendingMachine.isMouseOverRefundButton(mouseX, mouseY)) {
+      int refundedAmount = vendingMachine.manualRefund();
+      userCoins += refundedAmount;
+
+      if (refundedAmount > 0 && coinRefund != null) {
+        coinRefund.play();
+      }
+      return;
+    }
+
+    // --- HANDLE KLIK NUMPAD ---
+    int refundFromNumpad = vendingMachine.handleNumpadClick(machineWorks, coinRefund);
+
+    if (refundFromNumpad > 0) {
+      userCoins += refundFromNumpad;
+    } else if (refundFromNumpad == -1) {
+      if (numpadBeep != null) numpadBeep.play();
+    }
+
+    // --- HANDLE KLIK PINTU PICKUP ---
+    vendingMachine.handlePickupDoorClick(collectItem);
   }
-  
-  // === HANDLE KLIK NUMPAD ===
-  // return: jumlah refund, atau -1 untuk beep, atau 0 untuk diam
-  int refundFromNumpad = vendingMachine.handleNumpadClick(machineWorks, coinRefund);
-  
-  if (refundFromNumpad > 0) {
-    userCoins += refundFromNumpad; // ada refund, kembalikan ke user
-  } else if (refundFromNumpad == -1) {
-    // return -1 = user klik numpad, perlu beep sound
-    if (numpadBeep != null) numpadBeep.play();
-  }
-  // kalau 0 = tidak ada yang diklik
-  
-  // === HANDLE KLIK PINTU PICKUP ===
-  vendingMachine.handlePickupDoorClick(collectItem); // coba ambil item
 }
 
-// === FUNGSI KEYPRESSED ===
 // dipanggil otomatis saat keyboard ditekan (built-in processing)
 // variable global "key" berisi karakter yang ditekan
 void keyPressed() {
-  // cek state sekarang
-  if (gameState == 0) {
-    // === KONTROL DI INTRO ===
-    
-    if (key == ' ') { // spasi ditekan
-      gameState = 1; // switch ke state main game
-    } else if (key == 'r' || key == 'R') { // r ditekan (case insensitive)
-      introAnim.reset(); // reset animasi intro ke awal
+  // STATE: HOME PAGE 
+  if (currentState.equals("HOME")) {
+    // Di halaman home tidak ada kontrol keyboard
+    return;
+  }
+
+  // STATE: INTRO ANIMATION 
+  if (currentState.equals("INTRO")) {
+    if (key == ' ') {
+      // lanjut ke main game
+      currentState = "GAME";
+    } else if (key == 'r' || key == 'R') {
+      introAnim.reset(); // reset animasi intro
     }
-    
-  } else {
-    // === KONTROL DI MAIN GAME ===
-    
-    // tombol N = ganti track musik
+    return;
+  }
+
+  // STATE: MAIN GAME 
+  if (currentState.equals("GAME")) {
+    // tombol N = ganti musik
     if (key == 'n' || key == 'N') {
-      // stop track sekarang
       if (musicTracks[currentTrack] != null) {
         musicTracks[currentTrack].stop();
       }
-      
-      // pindah ke track berikutnya dengan modulo (loop balik ke 0)
-      // contoh: (3 + 1) % 4 = 0, jadi dari track 4 balik ke track 1
       currentTrack = (currentTrack + 1) % musicTracks.length;
-      
-      // play track baru
       if (musicTracks[currentTrack] != null) {
         musicTracks[currentTrack].play();
         musicPlaying = true;
       } else {
-        musicPlaying = false; // track null (file tidak ada)
+        musicPlaying = false;
       }
-      
-      println("Playing Track: " + (currentTrack + 1)); // print ke console
+      println("Playing Track: " + (currentTrack + 1));
     }
-    
+
     // tombol R = refund semua koin
     if (key == 'r' || key == 'R') {
-      int refundedAmount = vendingMachine.manualRefund(); // ambil koin dari mesin
-      userCoins += refundedAmount; // kembalikan ke saldo user
-      
-      // play sound kalau ada koin yang dikembalikan
+      int refundedAmount = vendingMachine.manualRefund();
+      userCoins += refundedAmount;
       if (refundedAmount > 0 && coinRefund != null) {
         coinRefund.play();
       }
     }
-    
-    // handle input keyboard lain (angka, huruf untuk numpad)
-    // return: jumlah refund, -1 untuk beep, 0 untuk diam
+
+    // handle input keyboard numpad
     int refundFromKey = vendingMachine.handleKeyPressed(key, machineWorks, coinRefund);
-    
     if (refundFromKey > 0) {
-      userCoins += refundFromKey; // ada refund
+      userCoins += refundFromKey;
     } else if (refundFromKey == -1) {
-      // perlu beep sound (user input numpad)
       if (numpadBeep != null) numpadBeep.play();
     }
-    
-    // tombol T = ganti waktu (pagi/siang/sore/malam)
+
+    // tombol T = ganti waktu
     if (key == 't' || key == 'T') {
-      cityBackground.nextSkyMode(); // cycle ke waktu berikutnya
-      println("Sky Mode: " + cityBackground.getSkyMode()); // print mode sekarang
+      cityBackground.nextSkyMode();
+      println("Sky Mode: " + cityBackground.getSkyMode());
     }
   }
 }
 
-// === FUNGSI DRAW TOMBOL MUSIK ===
 // render tombol play/pause musik di kiri bawah layar
 void drawMusicButton() {
   float btnX = 60, btnY = height - 40; // posisi tengah tombol
   float btnW = 100, btnH = 35; // ukuran tombol
   
-  // deteksi hover mouse (collision detection)
+  // deteksi hover mouse
   boolean isHover = (
-    mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 && // cek x
-    mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2    // cek y
+    mouseX > btnX - btnW/2 && mouseX < btnX + btnW/2 &&
+    mouseY > btnY - btnH/2 && mouseY < btnY + btnH/2
   );
   
-  // ubah warna dan cursor saat hover
+  // ubah warna saat hover
   if (isHover) {
-    fill(255, 200, 0); // warna kuning terang saat hover
-    cursor(HAND); // ubah cursor jadi icon tangan
+    fill(255, 80, 80); // merah terang saat hover
+    cursor(HAND);
   } else {
-    fill(255, 150, 0); // warna orange normal
+    fill(255, 50, 50); // merah normal
   }
-  
+
   // gambar kotak tombol
-  stroke(200, 100, 0); // warna border orange gelap
-  strokeWeight(3); // tebal border 3 pixel
-  rectMode(CENTER); // set mode gambar rect dari tengah (bukan kiri atas)
-  rect(btnX, btnY, btnW, btnH, 8); // gambar rect dengan corner radius 8
-  rectMode(CORNER); // kembalikan mode ke default (kiri atas)
-  
-  // gambar text label tombol
-  fill(255); // warna putih
-  textAlign(CENTER, CENTER); // text di tengah
-  textSize(14); // ukuran font
-  // operator ternary: (kondisi) ? nilai_true : nilai_false
-  text(musicPlaying ? "PAUSE" : "PLAY", btnX, btnY); // text sesuai state
-  
-  // gambar info track di bawah tombol
-  textSize(10); // font lebih kecil
-  text("Track " + (currentTrack + 1) + "/" + musicTracks.length, btnX, btnY + 25);
-  
-  // reset setting
-  textAlign(LEFT); // kembalikan align ke kiri
-  noStroke(); // matikan stroke untuk render berikutnya
+  stroke(180, 30, 30);
+  strokeWeight(3);
+  rectMode(CENTER);
+  rect(btnX, btnY, btnW, btnH, 8);
+  rectMode(CORNER);
+
+  // text label tombol
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(14);
+  text("KELUAR", btnX, btnY);
+
+  // reset style
+  textAlign(LEFT);
+  noStroke();
 }
 
-// === FUNGSI DRAW INSTRUKSI OVERLAY ===
 // tampilkan text instruksi di kiri atas layar
 void drawInstructions() {
   // setting text style
@@ -348,13 +315,20 @@ void drawInstructions() {
   int y_pos = 20; // mulai dari y=20
   
   // render text instruksi satu per satu
+  int skyMode = cityBackground.getSkyMode();  
+  if (skyMode == 3){ // ni malam, teks putih
+  fill(255);
   text("Kontrol:", 10, y_pos); y_pos += 15; // header + increment y
   text("'T' : Ganti Waktu (Pagi/Siang/Sore/Malam)", 10, y_pos); y_pos += 15;
   text("'N' : Ganti Lagu (Next Track)", 10, y_pos); y_pos += 15;
-  text("Klik 'PLAY' : Toggle Play/Pause", 10, y_pos); // text terakhir
+  } else { // selebihnya hitam
+  fill(0); 
+  text("Kontrol:", 10, y_pos); y_pos += 15; // header + increment y
+  text("'T' : Ganti Waktu (Pagi/Siang/Sore/Malam)", 10, y_pos); y_pos += 15;
+  text("'N' : Ganti Lagu (Next Track)", 10, y_pos); y_pos += 15;
+  }
 }
 
-// === FUNGSI DRAW COIN UI ===
 // tampilkan jumlah koin user di kanan atas layar
 void drawCoinUI() {
   // pushMatrix = save transformasi sekarang (isolasi drawing)
@@ -400,4 +374,9 @@ void drawCoinUI() {
   // popMatrix = restore transformasi sebelumnya
   // pasangan dari pushMatrix, balikin state sebelum pushMatrix
   popMatrix();
+}
+
+void startIntro() {
+  introAnim = new IntroAnimation();
+  currentState = "INTRO";
 }

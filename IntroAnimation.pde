@@ -1,63 +1,49 @@
-// === KELAS INTRO ANIMATION ===
 // class untuk animasi intro 3D dengan 6 fase, bezier curves, dan particle system
 // menggambarkan alur vending machine: partikel → mesin → koin → snack → text
 class IntroAnimation {
-  // === VARIABEL FASE & TIMING ===
   int phase;           // fase animasi sekarang (0-5, total 6 fase)
   float phaseProgress; // progress dalam fase (0.0-1.0, normalized)
   float totalTime;     // total waktu animasi berjalan (detik)
   
-  // === VARIABEL PARTICLE SYSTEM ===
   // arraylist = struktur data dinamis untuk collection object
   ArrayList<Particle3D> particles; // array 50 partikel 3D background
   
-  // === VARIABEL KAMERA 3D ===
   float cameraAngle;    // sudut rotasi kamera (radian)
   float cameraDistance; // jarak kamera dari origin (pixel)
   // PVector = class untuk vektor 3D (x, y, z)
   PVector cameraPos;    // posisi kamera dalam 3D space
   
-  // === VARIABEL ANIMASI KOIN ===
   ArrayList<Coin3D> coins3D; // array koin 3D yang terbang dengan bezier curve
   float coinAnimProgress;    // progress animasi koin (0.0-1.0)
   
-  // === VARIABEL ANIMASI MESIN VENDING 3D ===
   float machineScale;    // scale mesin (0-1, untuk zoom in effect)
   float machineRotation; // rotasi mesin (radian, untuk spin effect)
   
-  // === VARIABEL ANIMASI SNACK JATUH ===
   float snackFallProgress; // progress animasi snack jatuh (0.0-1.0)
   PVector snackPos;        // posisi snack dalam 3D space (x, y, z)
   
-  // === FONT ===
   // PFont = class untuk custom font di Processing
   PFont titleFont, instructionFont; // font untuk judul dan instruksi
   
-  // === CONSTRUCTOR ===
   // inisialisasi semua variabel dan object saat IntroAnimation dibuat
   IntroAnimation() {
-    // === INIT FASE & TIMING ===
     phase = 0;         // mulai dari fase 0
     phaseProgress = 0; // progress 0% (awal fase)
     totalTime = 0;     // timer mulai dari 0
     
-    // === INIT COLLECTIONS ===
     particles = new ArrayList<Particle3D>(); // buat arraylist kosong
     coins3D = new ArrayList<Coin3D>();       // buat arraylist kosong
     
-    // === INIT KAMERA ===
     cameraAngle = 0;                      // sudut awal 0 (frontal)
     cameraDistance = 600;                 // jarak 600 pixel dari origin
     cameraPos = new PVector(0, 0, 0);    // posisi awal di origin
     
-    // === INIT ANIMASI ===
     machineScale = 0;                     // mesin mulai invisible (scale 0)
     machineRotation = 0;                  // rotasi awal 0
     snackFallProgress = 0;                // snack belum jatuh
     snackPos = new PVector(0, -100, 0);  // posisi awal snack (di atas)
     coinAnimProgress = 0;                 // koin belum terbang
     
-    // === LOAD FONT ===
     // try-catch = error handling (coba load font, jika gagal gunakan fallback)
     try {
       // createFont = buat font dari system font
@@ -69,7 +55,6 @@ class IntroAnimation {
       instructionFont = createFont("Arial", 20);
     }
     
-    // === INIT 50 PARTIKEL BACKGROUND ===
     // loop untuk create 50 object Particle3D dengan posisi dan warna random
     for (int i = 0; i < 50; i++) {
       particles.add(new Particle3D(
@@ -81,7 +66,6 @@ class IntroAnimation {
     }
   }
   
-  // === FUNGSI RESET ===
   // reset semua variabel ke nilai awal (dipanggil saat user tekan R)
   void reset() {
     phase = 0;            // kembali ke fase 0
@@ -94,7 +78,6 @@ class IntroAnimation {
     coins3D.clear();      // hapus semua koin 3D (clear arraylist)
   }
   
-  // === FUNGSI UPDATE ===
   // dipanggil setiap frame untuk update state animasi
   void update() {
     // increment timer (0.016 ≈ 1/60 detik = 1 frame @ 60fps)
@@ -104,13 +87,11 @@ class IntroAnimation {
     // nilai lebih besar = animasi lebih cepat
     phaseProgress += 0.008;
     
-    // === UPDATE SEMUA PARTIKEL ===
     // enhanced for loop untuk iterate collection
     for (Particle3D p : particles) {
       p.update(); // panggil method update() setiap partikel
     }
     
-    // === UPDATE KAMERA (SMOOTH SWAY) ===
     // hitung target angle dengan sin wave (efek goyang smooth)
     float targetAngle = sin(totalTime * 0.5) * 0.3; // amplitude 0.3 radian
     
@@ -118,7 +99,6 @@ class IntroAnimation {
     // syntax: lerp(start, end, amount) - amount 0.05 = 5% per frame
     cameraAngle = lerp(cameraAngle, targetAngle, 0.05);
     
-    // === PHASE PROGRESSION ===
     // cek apakah phase selesai (progress >= 100%)
     if (phaseProgress >= 1.0) {
       phaseProgress = 0; // reset progress untuk phase berikutnya
@@ -129,7 +109,6 @@ class IntroAnimation {
         phase = 5; // stay di phase terakhir (loop idle)
       }
       
-      // === TRIGGER EVENTS PER PHASE ===
       // spawn object atau setup animasi saat masuk phase tertentu
       if (phase == 2) {
         // --- PHASE 2: SPAWN 5 KOIN 3D ---
@@ -143,7 +122,6 @@ class IntroAnimation {
       }
     }
     
-    // === UPDATE ANIMASI BERDASARKAN PHASE ===
     // switch-case untuk handle logic setiap fase
     switch (phase) {
       case 0: // --- PHASE 0: MESIN ZOOM IN + PARTIKEL ---
@@ -394,7 +372,7 @@ class IntroAnimation {
       fill(255, 255, 255, alpha * 0.8);
       textFont(instructionFont);
       textSize(18);
-      text("Simulasi Mesin Snack & Minuman", width/2, 130);
+      text("Simulasi Mesin Snack", width/2, 130);
     }
     
     // Phase descriptions dengan icon

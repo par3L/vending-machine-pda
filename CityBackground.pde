@@ -3,17 +3,16 @@
 // berisi render background kota dinamis dengan 4 waktu (pagi/siang/sore/malam)
 // termasuk langit gradient, awan animated, bintang, gedung, lampu jalan
 class CityBackground {
-  // === VARIABEL SKY MODE ===
   int skyMode = 0; // mode waktu: 0=pagi, 1=siang, 2=sore, 3=malam
   
-  // init awan
+  // init var awan
   int numClouds = 8;                      // jumlah awan di langit
   float[] cloudX = new float[numClouds];  // array posisi x setiap awan
   float[] cloudY = new float[numClouds];  // array posisi y setiap awan
   float[] cloudSize = new float[numClouds];  // array ukuran setiap awan
   float[] cloudSpeed = new float[numClouds]; // array kecepatan gerak setiap awan
   
-  // init bintant
+  // init var bintant
   int numStars = 150;                        // jumlah bintang (hanya malam)
   float[] starX = new float[numStars];       // array posisi x setiap bintang
   float[] starY = new float[numStars];       // array posisi y setiap bintang
@@ -25,9 +24,8 @@ class CityBackground {
   PGraphics windowOffLayer;  // layer jendela mati (abu-abu gelap)
   PGraphics windowOnLayer;   // layer jendela nyala (kuning terang)
 
-  // === CONSTRUCTOR ===
   CityBackground() {
-    // === INISIALISASI AWAN 
+    // innit awan  
     // set posisi dan property acak untuk setiap awan
     for (int i = 0; i < numClouds; i++) {
       cloudX[i] = random(-width, width);  // x acak dari luar kiri sampai luar kanan
@@ -36,16 +34,15 @@ class CityBackground {
       cloudSpeed[i] = random(0.1, 0.5);   // kecepatan gerak acak (pixel per frame)
     }
     
-    // === INISIALISASI BINTANG ===
+    // innit bintang
     // set posisi dan kecerahan acak untuk setiap bintang
     for (int i = 0; i < numStars; i++) {
       starX[i] = random(width);              // x acak di seluruh layar
       starY[i] = random(5, height * 0.7);    // y acak di 70% atas layar
       starBrightness[i] = random(100, 255);  // kecerahan acak (efek twinkle)
     }
-    
-    // === PRE-RENDER LAYER JENDELA MATI ===
-    // createGraphics = buat off-screen buffer dengan renderer P2D (2D cepat)
+  
+    // createGraphics = buat off-screen buffer dengan renderer P2D
     windowOffLayer = createGraphics(width, height, P2D);
     windowOffLayer.beginDraw(); // mulai drawing ke buffer
     windowOffLayer.noStroke();
@@ -59,8 +56,7 @@ class CityBackground {
     drawWindowGrid(windowOffLayer, 810, 320, 100, height-230, false);  // gedung 5
     
     windowOffLayer.endDraw(); // selesai drawing
-    
-    // === PRE-RENDER LAYER JENDELA NYALA ===
+    // jendela nyala
     windowOnLayer = createGraphics(width, height, P2D);
     windowOnLayer.beginDraw();
     windowOnLayer.noStroke();
@@ -76,7 +72,6 @@ class CityBackground {
     windowOnLayer.endDraw();
   }
 
-  // === FUNGSI UPDATE ===
   // dipanggil setiap frame untuk update animasi (awan, bintang)
   void update() {
     updateClouds(); // geser posisi awan (scrolling)
@@ -87,7 +82,6 @@ class CityBackground {
     }
   }
 
-  // === FUNGSI DISPLAY ===
   // dipanggil setiap frame untuk render seluruh background
   void display() {
     // tentukan apakah lampu gedung/jalan nyala
@@ -104,7 +98,6 @@ class CityBackground {
   }
 
 
-  // === GETTER & SETTER ===
   // getter = fungsi untuk ambil nilai variabel private/protected
   int getSkyMode() {
     return skyMode; // return mode langit sekarang (0-3)
@@ -116,31 +109,29 @@ class CityBackground {
   }
 
 
-  // === FUNGSI DRAW BACKGROUND DAN SKY ===
   // render gradient langit dan setup lighting berdasarkan sky mode
   void drawBackgroundAndSky() {
     // variabel untuk warna gradient (atas dan bawah)
     color topColor, bottomColor;
-    
-    // === PILIH WARNA BERDASARKAN SKY MODE ===
-    // switch-case = control flow untuk multiple conditions
+  
+    // switch-case
     switch (skyMode) {
-    case 0: // --- PAGI ---
+    case 0: // --- pagi ---
       topColor = color(100, 150, 230);    // biru langit pagi (atas)
       bottomColor = color(255, 220, 180); // orange muda (bawah/horizon)
-      break; // keluar dari switch
+      break; 
       
-    case 1: // --- SIANG ---
+    case 1: // --- siang ---
       topColor = color(135, 206, 250);    // sky blue terang (atas)
       bottomColor = color(240, 240, 255); // putih kebiruan (bawah)
       break;
       
-    case 2: // --- SORE ---
+    case 2: // --- sore ---
       topColor = color(255, 140, 0);      // orange terang (atas)
       bottomColor = color(255, 100, 150); // pink sunset (bawah)
       break;
       
-    default: // --- MALAM (case 3) ---
+    default: // --- malam ---
       topColor = color(0, 0, 30);         // biru gelap hampir hitam (atas)
       bottomColor = color(20, 0, 60);     // ungu gelap (bawah)
       break;
@@ -149,21 +140,19 @@ class CityBackground {
     // render gradient langit dari atas ke bawah
     drawGradient(topColor, bottomColor);
     
-    // === SETUP LIGHTING 3D ===
     // lights() = aktifkan default lighting Processing (untuk render 3D)
     lights();
     noStroke(); // matikan stroke untuk render matahari/bulan
     
-    // === VARIABEL WARNA CELESTIAL BODY ===
     color sunCol, glowCol, moonCol; // warna matahari, glow, bulan
     
-    // === SETUP LIGHTING BERDASARKAN SKY MODE ===
     switch (skyMode) {
     case 0: // --- PAGI ---
       // ambientLight = cahaya ambient (menyinari semua object merata)
       ambientLight(100, 90, 80); // cahaya warm pagi
       
       // directionalLight = cahaya directional (dari arah tertentu)
+      // directionalLight ni simulasikan arah cahaya matahari yang offscreen
       // parameter: (r, g, b, vx, vy, vz) - vx/vy/vz adalah vektor arah
       directionalLight(255, 255, 200, -1, -0.5, -1); // cahaya dari kiri atas
       
@@ -204,7 +193,6 @@ class CityBackground {
     }
   }
 
-  // === FUNGSI DRAW GRADIENT ===
   // render gradient vertikal dari warna c1 (atas) ke c2 (bawah)
   // menggunakan vertex color interpolation
   void drawGradient(color c1, color c2) {
@@ -227,7 +215,6 @@ class CityBackground {
     // Processing otomatis interpolate warna antara vertex (gradient smooth)
     endShape(CLOSE);
   }
-
 
   void drawBuildings(boolean lightsOn) {
     noStroke();
@@ -320,7 +307,6 @@ class CityBackground {
   }
 
 
-
   void drawFluffyCloud(float x, float y, float size) {
     noStroke();
     fill(220, 220, 225, 70);
@@ -355,7 +341,7 @@ class CityBackground {
       if (cloudX[i] > width + cloudSize[i]) {
         cloudX[i] = -cloudSize[i] * 1.5;
         cloudY[i] = random(50, 250);
-      } // reset ke kiri
+      }
     }
   }
 

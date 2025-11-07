@@ -1,5 +1,5 @@
 
-// kelas animasi koin terbang dari atas slot
+// kelas animasi koin masuk ke slot
 class AnimatedCoin {
   // PVector = tipe data bawaan processing untuk menyimpan koordinat 2d/3d (x, y, z)
   // gunanya untuk hitung posisi dan gerakan objek dengan mudah
@@ -15,8 +15,8 @@ class AnimatedCoin {
   // parameter: posisi awal (startX, startY) dan posisi tujuan (targetX, targetY)
   AnimatedCoin(float startX, float startY, float targetX, float targetY) {
     pos = new PVector(startX, startY); // buat pvector baru untuk posisi awal koin
-    size = 15; // set diameter koin 15 pixel
-    lifetime = 15; // koin akan hidup selama 15 frame (~0.25 detik di 60fps)
+    size = 15; // diameter koin 15 pixel
+    lifetime = 15; // koin akan hidup selama 15 frame
     
     // hitung vektor arah dari start ke target (selisih koordinat)
     vel = new PVector(targetX - startX, targetY - startY);
@@ -26,7 +26,7 @@ class AnimatedCoin {
     rotSpeed = random(-0.2, 0.2); // kecepatan putar acak (negatif = kiri, positif = kanan)
   }
 
-  // fungsi update dipanggil setiap frame untuk update posisi dan state koin
+  // fungsi ni dipanggil setiap frame untuk update posisi dan state koin
   void update() {
     pos.add(vel); // tambahkan velocity ke posisi (gerakkan koin sesuai kecepatan)
     rotation += rotSpeed; // tambah sudut rotasi (putar koin pelan-pelan)
@@ -34,7 +34,7 @@ class AnimatedCoin {
     vel.y += 0.2; // tambah kecepatan y (gravitasi membuat koin jatuh makin cepat)
   }
 
-  // fungsi display untuk render/gambar koin ke layar
+  // render/gambar koin ke layar
   void display() {
     pushMatrix(); // simpan state transformasi sekarang (posisi/rotasi canvas)
     translate(pos.x, pos.y); // pindah titik origin (0,0) ke posisi koin

@@ -56,11 +56,12 @@ Proyek ini dimulai dengan **animasi intro 3D yang memukau** yang menggambarkan a
 ```
 vending-machine-pda/
 ├── main.pde              // entry point & state management (intro/game)
-├── IntroAnimation.pde    // ⭐ animasi intro 3D dengan kurva bezier
+├── IntroAnimation.pde    // animasi intro 3D dengan kurva bezier
 ├── VendingMachine.pde    // logika mesin, transaksi, render
 ├── Item.pde              // class produk & animasi jatuh
 ├── CityBackground.pde    // background & sistem waktu
 ├── AnimatedCoin.pde      // animasi koin terbang (2D untuk game)
+|-- HomePage              // beranda, supaya kelihatan OOP
 ├── assets/
 │   ├── images/           // gambar produk
 │   └── sounds/           // efek suara & musik

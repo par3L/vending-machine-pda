@@ -1,38 +1,27 @@
 
 import processing.sound.*;
 
-// === KELAS VENDING MACHINE ===
 // class utama yang handle semua logic mesin vending
 // termasuk render 2D, numpad, pembelian, animasi jatuh, dll
 class VendingMachine {
-  // === VARIABEL DATA ===
   // arraylist = struktur data dinamis yang bisa bertambah/kurang
   ArrayList<Item> items; // daftar semua snack di mesin (12 item: 4 row x 3 col)
-  
-  // === VARIABEL NUMPAD & INPUT ===
   String inputCode; // kode yang user ketik di numpad (2 digit, contoh: "23")
-  
-  // === VARIABEL PROSES PEMBELIAN ===
   boolean isProcessing; // true = mesin sedang proses jatuh item
   int processingTimer; // counter frame untuk timing proses
   Item selectedItem; // referensi ke item yang sedang jatuh
   ArrayList<Item> itemsToSlide; // array untuk animasi slide (fitur tidak dipakai)
-  
-  // === VARIABEL ERROR MESSAGE ===
   String errorMessage; // text error di LCD (contoh: "NO COINS!", "SOLD", dll)
   int errorTimer; // counter frame untuk auto-hide error message (2 detik)
-  
-  // === VARIABEL PICKUP DOOR ===
   Item collectedItem; // item yang sudah jatuh dan siap diambil di pintu
   boolean doorOpen; // true = pintu terbuka (saat mouse hover)
   
-  // === KONSTANTA HARGA ===
+
   final int PRICE = 5; // harga setiap item (5 koin)
   
-  // === VARIABEL KOIN ===
+
   int coinsInserted = 0; // jumlah koin yang sudah masuk ke mesin
 
-  // === CONSTRUCTOR ===
   // fungsi yang dipanggil saat object VendingMachine dibuat
   VendingMachine() {
     // inisialisasi semua variabel ke nilai awal
@@ -47,8 +36,6 @@ class VendingMachine {
     initializeItems(); // panggil fungsi untuk setup semua snack
   }
 
-
-  // === FUNGSI INISIALISASI ITEM ===
   // setup 12 snack di grid 4x3 (4 row, 3 column)
   void initializeItems() {
     // array warna untuk setiap snack (12 warna unik)
@@ -107,7 +94,6 @@ class VendingMachine {
   }
 
 
-  // === FUNGSI DISPLAY UTAMA ===
   // dipanggil setiap frame dari main.pde untuk render mesin
   void display(int skyMode) {
     // delegate ke fungsi render 2D (skyMode untuk lighting adjustment)
@@ -115,7 +101,6 @@ class VendingMachine {
   }
 
 
-  // === FUNGSI RENDER VENDING MACHINE 2D ===
   // render seluruh mesin vending dalam 2D (body, glass, numpad, door, dll)
   void renderVendingMachine2D(int skyMode) {
     // pushMatrix = save state transformasi (isolasi drawing)
@@ -124,7 +109,7 @@ class VendingMachine {
     // camera() = reset ke default camera 2D (cancel 3D transformations)
     camera();
     
-    // === KONSTANTA DIMENSI MESIN ===
+    // dimensi vm
     float vmX = 420;          // posisi x tengah mesin
     float vmY = height - 240; // posisi y tengah mesin
     float vmWidth = 360;      // lebar mesin
@@ -135,7 +120,6 @@ class VendingMachine {
     float vmLeft = vmX - vmWidth/2;
     float vmTop = vmY - vmHeight/2;
     
-    // === WARNA MESIN ===
     // warna base (merah maroon)
     color baseBodyColor = color(160, 45, 45);   // body utama
     color basePanelColor = color(180, 55, 55);  // panel atas
@@ -154,7 +138,7 @@ class VendingMachine {
     
     noStroke(); // matikan border untuk render
     
-    // === RENDER SISI KIRI BODY (PSEUDO 3D) ===
+    // sisi kiri mesin (rill tp fake 3D)
     fill(sideBodyColor); // warna gelap untuk sisi
     pushMatrix();
     translate(vmLeft, vmTop); // pindah ke pojok kiri atas
@@ -168,7 +152,7 @@ class VendingMachine {
     );
     popMatrix();
     
-    // === RENDER SISI KIRI PANEL ATAS (PSEUDO 3D) ===
+    // sisi kiri atas mesin (sama)
     fill(sidePanelColor); // warna panel sisi
     pushMatrix();
     translate(vmLeft, vmTop);
@@ -180,17 +164,17 @@ class VendingMachine {
     );
     popMatrix();
     
-    // === RENDER BODY UTAMA ===
+    // body utama
     fill(baseBodyColor); // warna merah maroon
     noStroke();
     rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, vmHeight);
     
-    // === RENDER PANEL ATAS ===
+    // panel atas
     fill(basePanelColor); // warna merah lebih terang
     noStroke();
     rect(vmX - vmWidth/2, vmY - vmHeight/2, vmWidth, 40); // tinggi 40 pixel
     
-    // === RENDER LABEL PLAT (SIGN) ===
+    // plat vm
     fill(240, 220, 200); // warna cream terang
     rect(vmX - vmWidth/2 + 10, vmY - vmHeight/2 + 8, vmWidth - 20, 25, 4); // rounded rect
     
@@ -203,7 +187,7 @@ class VendingMachine {
     // render stiker dekorasi (sale, quality, smiley, new)
     renderStickers(vmX, vmY, vmWidth, vmHeight);
     
-    // === RENDER GLASS WINDOW (DISPLAY SNACK) ===
+    // display glass 
     float glassX = vmX - 130;           // posisi x glass (kiri dari tengah)
     float glassY = vmY - vmHeight/2 + 60; // posisi y glass (60 px dari atas mesin)
     float glassW = 220;                 // lebar glass
@@ -231,7 +215,7 @@ class VendingMachine {
     // render semua snack di dalam glass
     renderItems2D(glassX + 15, glassY + 18);
     
-    // === RENDER PICKUP DOOR (TEMPAT AMBIL SNACK) ===
+    // pickup door
     float doorX = glassX;              // x sama dengan glass
     float doorY = vmY + vmHeight/2 - 90; // 90 pixel dari bawah mesin
     float doorW = glassW;              // lebar sama dengan glass
@@ -259,7 +243,7 @@ class VendingMachine {
     float openingY = doorY + 12;       // 12 pixel dari atas door
     float openingH = doorH - 28;       // tinggi opening (padding atas bawah)
     
-    // === RENDER DOOR STATE (OPEN/CLOSED) ===
+    // logic close/open pickup door (ngambil snack)
     if (doorOpen) {
       // --- DOOR TERBUKA ---
       // background opening (abu lebih terang)
@@ -329,7 +313,7 @@ class VendingMachine {
     fill(120, 120, 130); // abu-abu metal
     rect(doorX + 5, doorY + doorH/2 - 11, 12, 22, 2); // handle vertikal
     
-    // === RENDER KOMPONEN UI DI KANAN ===
+    // render numpad
     // base koordinat numpad (semua komponen relatif ke ini)
     float numpadX = vmX + 120; // 120 pixel ke kanan dari center
     float numpadY = vmY - 50;  // 50 pixel ke atas dari center
@@ -340,7 +324,7 @@ class VendingMachine {
     renderCoinSlot(numpadX, numpadY - 93);           // coin slot (93px di atas numpad)
     renderRefundButton(numpadX, numpadY + 147);      // refund button (147px di bawah numpad)
     
-    // === RENDER BASE/KAKI MESIN ===
+    // panel bawah
     fill(60, 60, 65); // abu gelap
     stroke(30);       // border hitam
     strokeWeight(3);
@@ -351,7 +335,7 @@ class VendingMachine {
     popMatrix();
   }
 
-  // === FUNGSI RENDER ITEMS 2D ===
+  // render snack
   // render semua snack di grid 4x3 dalam glass window
   // handle 3 state: normal, falling, stuck
   void renderItems2D(float startX, float startY) {
@@ -408,8 +392,6 @@ class VendingMachine {
             popMatrix();
           }
         } else {
-          // === RENDER NORMAL ITEM (STATIC) ===
-          
           // shadow item
           fill(0, 0, 0, 40);
           noStroke();
@@ -461,7 +443,7 @@ class VendingMachine {
     }
   }
 
-  void renderStickers(float vmX, float vmY, float vmWidth, float vmHeight) {
+  void renderStickers(float vmX, float vmY, float vmWidth, float vmHeight) { // yep stiker
     pushMatrix();
     translate(vmX - vmWidth/2 + 24, vmY + vmHeight/2 - 160);
     fill(255, 80, 80);
@@ -515,7 +497,8 @@ class VendingMachine {
     rotate(0.3);
   }
 
-  void renderItemSupports(float startX, float startY, float spacingX, float spacingY) {
+  // pemisah antar item di dalam display
+  void renderItemSupports(float startX, float startY, float spacingX, float spacingY) { 
     float itemW = 62;
     float itemH = 65;
     float maxDisplayHeight = 300;
@@ -885,7 +868,6 @@ class VendingMachine {
     itemsToSlide.clear();
   }
 
-  // === FUNGSI UPDATE ===
   // dipanggil setiap frame untuk update state mesin
   // handle error timer, animasi jatuh, dan proses pembelian
   void update() {
@@ -901,7 +883,7 @@ class VendingMachine {
       }
     }
 
-    // === UPDATE ANIMASI ITEM ===
+    // update animasi item
     // loop semua item untuk update state masing-masing
     for (Item item : items) {
       if (item.isFalling || item.isStuck) {
@@ -914,7 +896,7 @@ class VendingMachine {
       }
     }
 
-    // === UPDATE PROSES PEMBELIAN ===
+    // proses item di pickup door
     // tunggu animasi jatuh selesai sebelum pindahkan ke pickup door
     if (isProcessing) {
       processingTimer++; // increment timer proses
