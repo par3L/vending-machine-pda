@@ -1,8 +1,6 @@
 
 // import library sound untuk efek suara dan musik
-  import processing.sound.*;
-
-// === VARIABLE GLOBAL (bisa diakses di semua fungsi) ===
+import processing.sound.*;
 
 // state management = sistem kontrol state aplikasi (intro atau game)
 //int gameState = 0; // 0 = intro, 1 = main game
@@ -34,13 +32,12 @@ SoundFile collectItem;   // suara ambil barang
 SoundFile coinDrop;      // suara koin masuk slot
 SoundFile coinRefund;    // suara refund koin
 
-int userCoins = 200; // saldo koin user (bisa bertambah/berkurang)
+int userCoins = 1000; // saldo koin user (bisa bertambah/berkurang)
 
 // ArrayList = list dinamis yang bisa bertambah/berkurang ukurannya
 // ArrayList<AnimatedCoin> = list yang isinya cuma objek animatedcoin
 ArrayList<AnimatedCoin> animatedCoins; // list untuk simpan animasi koin yang terbang
 
-// === FUNGSI SETTINGS ===
 // dipanggil paling awal sebelum setup() untuk set ukuran window
 void settings() {
   // size(lebar, tinggi, renderer)

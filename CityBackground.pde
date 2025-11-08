@@ -201,12 +201,12 @@ class CityBackground {
     // beginShape(QUADS) = mulai gambar bentuk dari 4 vertex 
     beginShape(QUADS);
     
-    // === VERTEX ATAS (WARNA c1) ===
+    // VERTEX ATAS (WARNA c1) 
     fill(c1); // set warna fill untuk 2 vertex atas
     vertex(0, 0);      // kiri atas
     vertex(width, 0);  // kanan atas
     
-    // === VERTEX BAWAH (WARNA c2) ===
+    // VERTEX BAWAH (WARNA c2) 
     fill(c2); // set warna fill untuk 2 vertex bawah
     vertex(width, height); // kanan bawah
     vertex(0, height);     // kiri bawah

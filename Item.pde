@@ -1,5 +1,5 @@
 
-// kelas item snack di mesin
+// kelas item snack, di mesin
 class Item {
   String name; // nama produk (contoh: "cheetos hot")
   String code; // kode untuk beli (contoh: "a1", "b2")

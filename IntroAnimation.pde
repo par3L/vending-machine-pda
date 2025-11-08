@@ -121,7 +121,7 @@ class IntroAnimation {
         }
       }
     }
-    
+  
     // switch-case untuk handle logic setiap fase
     switch (phase) {
       case 0: // --- PHASE 0: MESIN ZOOM IN + PARTIKEL ---
@@ -583,7 +583,6 @@ class Coin3D {
     float bezierProgress = progress;
     
     // === DEFINE BEZIER CONTROL POINTS ===
-    // bezier curve memerlukan 4 points: start, control1, control2, end
     // control points menentukan kelengkungan kurva
     PVector control1 = new PVector(
       startPos.x + random(-100, 100), // x dengan offset random (create variety)
@@ -654,3 +653,4 @@ class Coin3D {
     endShape();
   }
 }
+

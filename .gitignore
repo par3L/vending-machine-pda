@@ -24,3 +24,4 @@ desktop.ini
 build/
 out/
 *.class
+windows-amd64/
